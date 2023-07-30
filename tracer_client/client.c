@@ -2,6 +2,7 @@
 #include "drmgr.h"
 #include "drsyms.h"
 
+#include "args.h"
 #include "thread.h"
 #include "insert_instrumentation.h"
 #include "module_set.h"
@@ -47,7 +48,8 @@ DR_EXPORT void dr_client_main(client_id_t id, int argc, const char **argv) {
 
     bool successful = exts_init() && register_callbacks()
                                   && register_tls_slot()
-                                  && init_module_set();
+                                  && init_module_set()
+                                  && process_args(argc, argv);
     if (!successful) {
         EXIT_FAIL();
     }
@@ -56,9 +58,10 @@ DR_EXPORT void dr_client_main(client_id_t id, int argc, const char **argv) {
 }
 
 static void client_deinit(void) {
-    bool successful = deinit_module_set() && unregister_tls_slot()
-                                          && unregister_callbacks()
-                                          && exts_deinit();
+    bool successful = deinit_args() && deinit_module_set()
+                                    && unregister_tls_slot()
+                                    && unregister_callbacks()
+                                    && exts_deinit();
     if (!successful) {
         EXIT_FAIL();
     }

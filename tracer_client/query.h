@@ -44,8 +44,15 @@ query_results_t blank_query_results(void);
 /**
  * Gets file and line debug information for an instruction
  *
- * Returns: Whether an error was not found
+ * Returns: Whether successful
  */
 bool query_line(void *pc, char **file, uint64_t *line);
+
+/**
+ * Gets module and source file information for an instruction
+ *
+ * Returns: Whether successful
+ */
+bool query_file(void *pc, char *modulePath, char *sourcePath, int bufSize);
 
 #endif

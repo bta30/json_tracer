@@ -4,6 +4,7 @@
 
 #include "thread.h"
 #include "trace_information.h"
+#include "filter.h"
 #include "error.h"
 
 /**
@@ -120,8 +121,14 @@ dr_emit_flags_t insert_instrumentation(void *drcontext, void *tag,
         return DR_EMIT_DEFAULT;
     }
 
-    opnd_t pc = OPND_CREATE_INTPTR(instr_get_app_pc(instr));
-    dr_insert_clean_call(drcontext, instrList, instr, instrument, true, 1, pc);
+    void *pcAddr = instr_get_app_pc(instr);
+    if (!filter_include_pc(pcAddr)) {
+        return DR_EMIT_DEFAULT;
+    }
+
+    opnd_t pcOpnd = OPND_CREATE_INTPTR(pcAddr);
+    dr_insert_clean_call(drcontext, instrList, instr, instrument, true,
+                         1, pcOpnd);
 
     PRINT_DEBUG("Exited insert instrumentation");
     return DR_EMIT_DEFAULT;

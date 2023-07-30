@@ -1,5 +1,7 @@
 #include "query.h"
 
+#include <string.h>
+
 #include "dr_api.h"
 #include "drsyms.h"
 
@@ -97,6 +99,34 @@ bool query_line(void *pc, char **file, uint64_t *line) {
     dr_free_module_data(module);
 
     PRINT_DEBUG("Exit query line");
+    return true;
+}
+
+bool query_file(void *pc, char *modulePath, char *sourcePath, int bufSize) {
+    PRINT_DEBUG("Enter query file");
+
+    module_data_t *module = dr_lookup_module(pc);
+    if (module == NULL) {
+        PRINT_ERROR("Could not open module in query file");
+        return false;
+    }
+    strncpy(modulePath, module->full_path, bufSize);
+
+    char *src;
+    uint64_t line;
+    bool success = query_line(pc, &src, &line);
+    if (!success) {
+        return false;
+    }
+
+    if (src == NULL) {
+        sourcePath[0] = '\0';
+    } else {
+        strncpy(sourcePath, src, bufSize);
+        free(src);
+    }
+
+    PRINT_DEBUG("Exit query file");
     return true;
 }
 
