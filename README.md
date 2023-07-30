@@ -2,6 +2,10 @@
 A DynamoRIO client to generate trace of a program using DynamoRIO, outputting
 in JSON
 
+## Dependencies
+To build the client, DynamoRIO and `libdwarf` are required. Importantly,
+`libdwarf` must be compiled as position independent.
+
 ## Example Sum Program
 This repository comes with an example program in `sum_program/` to test the
 tracer.
