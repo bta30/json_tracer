@@ -8,7 +8,7 @@
 
 #define MIN_CAPACITY 16
 
-struct {
+static struct {
     filter_entry_t *entries;
     int sizeEntries, capacityEntries, maxValueSize;
     bool defaultInclude;

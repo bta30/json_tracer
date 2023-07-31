@@ -1,7 +1,7 @@
 #include "trace_information.h"
 
 #include "trace_entry.h"
-#include "thread.h"
+#include "instr_vals_buffer.h"
 #include "json_generation.h"
 #include "query.h"
 #include "error.h"
@@ -59,12 +59,12 @@ static char nibble_to_char(uint8_t nibble);
  */
 static bool get_opnd_debug_info(opnd_info_t *info, void *pcAddr, void *bp);
 
-bool flush_thread_buffer(void *drcontext) {
-    PRINT_DEBUG("Entered flush thread buffer");
+bool flush_vals_buffer(vals_buf_t *buf) {
+    PRINT_DEBUG("Entered flush values buffer");
 
-    while (!thread_buffer_empty(drcontext)) {
+    while (buf->size > 0) {
         instrument_vals_t vals;
-        if (!thread_entry_dequeue(drcontext, &vals)) {
+        if (!entry_dequeue(buf, &vals)) {
             PRINT_ERROR("Unable to dequeue entry to flush buffer");
             return false;
         }
@@ -75,18 +75,19 @@ bool flush_thread_buffer(void *drcontext) {
             return false;
         }
 
-        json_file_t *file = thread_get_json_file(drcontext);
+        json_file_t *file = &buf->file;
         if (!add_json_entry(file, entry)) {
             PRINT_ERROR("Unable to add JSON entry to flush buffer");
             return false;
         }
     }
 
-    PRINT_DEBUG("Exited flush thread buffer");
+    PRINT_DEBUG("Exited flush values buffer");
     return true;
 }
 
 static bool get_entry_info(instrument_vals_t vals, trace_entry_t *entry) {
+    entry->tid = vals.tid;
     entry->pc = vals.pc;
 
     if (!query_line(entry->pc, &entry->file, &entry->line)) {

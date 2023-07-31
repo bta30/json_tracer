@@ -57,6 +57,7 @@ typedef struct opnd_vals {
 } opnd_vals_t;
 
 typedef struct instrument_vals {
+    thread_id_t tid;
     void *pc;
     void *rbp;
     int opcode;
@@ -107,6 +108,10 @@ typedef struct opnd_info {
 } opnd_info_t;
 
 typedef struct trace_entry {
+    char time[32];
+
+    thread_id_t tid;
+
     char *file;
     uint64_t line;
 
@@ -117,8 +122,6 @@ typedef struct trace_entry {
     opnd_info_t srcs[4];
     opnd_info_t dsts[4];
     int sizeSrcs, sizeDsts;
-
-    char time[32];
 } trace_entry_t;
 
 /**

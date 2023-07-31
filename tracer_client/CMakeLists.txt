@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.26)
 project(jsontracer)
 
-set(SRCS client.c thread.c insert_instrumentation.c trace_information.c
+set(SRCS client.c insert_instrumentation.c trace_information.c
          json_generation.c trace_entry.c module_debug_info_init.c
-         module_query.c query.c module_set.c args.c filter.c)
+         module_query.c query.c module_set.c args.c filter.c
+         instr_vals_buffer.c)
 set(EXTS drmgr drx drsyms)
 
 find_package(DynamoRIO)

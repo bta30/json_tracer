@@ -2,8 +2,7 @@
 
 #include "dr_api.h"
 
-#include "thread.h"
-#include "trace_information.h"
+#include "instr_vals_buffer.h"
 #include "filter.h"
 #include "error.h"
 
@@ -12,7 +11,7 @@
  *
  * Returns: The retrieved context
  */
-dr_mcontext_t get_mcontext();
+static dr_mcontext_t get_mcontext(void);
 
 /**
  * Clean call called before an application instruction to instrument values
@@ -31,6 +30,11 @@ static bool instr_from_pc(void *drcontext, app_pc pc, instr_t *instr);
  * instruction
  */
 static instrument_vals_t get_instr_vals(app_pc pc, instr_t *instr);
+
+/**
+ * Returns the current thread ID
+ */
+static thread_id_t get_current_tid(void);
 
 /**
  * Gets the value of register RBP in the current context
@@ -132,7 +136,7 @@ dr_emit_flags_t insert_instrumentation(void *drcontext, void *tag,
     return DR_EMIT_DEFAULT;
 }
 
-dr_mcontext_t get_mcontext() {
+static dr_mcontext_t get_mcontext(void) {
     void *drcontext = dr_get_current_drcontext();
 
     dr_mcontext_t mcontext;
@@ -157,14 +161,12 @@ static void instrument(app_pc pc) {
     }
 
     instrument_vals_t entry = get_instr_vals(pc, &instr);
-    thread_entry_enqueue(drcontext, entry);
+    bool success = entry_enqueue(drcontext, entry);
 
     instr_free(drcontext, &instr);
 
-    bool success = !thread_buffer_full(drcontext) ||
-                   flush_thread_buffer(drcontext);
     if (!success) {
-        PRINT_ERROR("Could not flush full buffer");
+        PRINT_ERROR("Could not enqueue to instrumented values buffer");
         EXIT_FAIL();
     }
 
@@ -181,6 +183,7 @@ static instrument_vals_t get_instr_vals(app_pc pc, instr_t *instr) {
     entry.pc = pc;
     entry.opcode = instr_get_opcode(instr);
     entry.time = time(NULL);
+    entry.tid = get_current_tid();
 
     if (!get_rbp(&entry.rbp)) {
         PRINT_ERROR("Could not get RBP value");
@@ -193,6 +196,11 @@ static instrument_vals_t get_instr_vals(app_pc pc, instr_t *instr) {
     }
 
     return entry;
+}
+
+static thread_id_t get_current_tid(void) {
+    void *drcontext = dr_get_current_drcontext();
+    return dr_get_thread_id(drcontext);
 }
 
 static bool get_rbp(void **rbp) {

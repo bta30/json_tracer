@@ -170,9 +170,10 @@ static bool terminate_json_line(json_file_t *jsonFile) {
 static bool write_entry(json_file_t *jsonFile, trace_entry_t entry) {
     char buf[128];
     sprintf(buf,
-            "{ \"time\": \"%s\", \"pc\": \"%p\", "
+            "{ \"time\": \"%s\", \"tid\": %i, \"pc\": \"%p\", "
             "\"opcode\": { \"name\": \"%s\", \"value\": %i }, ",
-            entry.time, entry.pc, entry.opcodeName, entry.opcodeValue);
+            entry.time, entry.tid, entry.pc,
+            entry.opcodeName, entry.opcodeValue);
 
     bool success = append_buffer(jsonFile, buf) &&
                    write_line_info(jsonFile, entry) &&

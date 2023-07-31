@@ -4,6 +4,7 @@
 #include <getopt.h>
 
 #include "filter.h"
+#include "instr_vals_buffer.h"
 #include "error.h"
 
 typedef enum arg_type {
@@ -12,17 +13,21 @@ typedef enum arg_type {
     argModule,
     argFile,
     argInstruction,
+    argInterleaved,
+    argSeparate,
     argHelp
 } arg_type_t;
 
 static const struct option opts[] = {
-    (struct option) { "include",        0, NULL, argInclude },
-    (struct option) { "exclude",        0, NULL, argExclude },
-    (struct option) { "module",         1, NULL, argModule },
-    (struct option) { "file",           1, NULL, argFile },
-    (struct option) { "instruction",    1, NULL, argInstruction },
-    (struct option) { "help",           0, NULL, argHelp },
-    (struct option) { 0,                0, 0,    0   }
+    (struct option) { "include",            0, NULL, argInclude },
+    (struct option) { "exclude",            0, NULL, argExclude },
+    (struct option) { "module",             1, NULL, argModule },
+    (struct option) { "file",               1, NULL, argFile },
+    (struct option) { "instruction",        1, NULL, argInstruction },
+    (struct option) { "output_interleaved", 0, NULL, argInterleaved },
+    (struct option) { "output_separate",    0, NULL, argSeparate },
+    (struct option) { "help",               0, NULL, argHelp },
+    (struct option) { 0,                    0, 0,    0   }
 };
 
 /**
@@ -30,7 +35,7 @@ static const struct option opts[] = {
  *
  * Returns: Whether successful
  */
-static bool process_opt(int opt);
+static bool process_opt(int opt, bool *interleaved, bool *separate);
 
 /**
  * Prints the help message
@@ -59,14 +64,19 @@ bool process_args(int argc, const char **argv) {
     memcpy(nonConstArgv, argv, sizeof(argv[0]) * argc);
 
     int opt;
+    bool interleaved = false, separate = false;
     while ((opt = getopt_long(argc, nonConstArgv, "", opts, NULL)) != -1) {
-        if (!process_opt(opt)) {
+        if (!process_opt(opt, &interleaved, &separate)) {
             free(nonConstArgv);
             return false;
         }
     }
     
     free(nonConstArgv);
+
+    if (!init_vals_buf(separate, interleaved)) {
+        return false;
+    }
 
     PRINT_DEBUG("Exit process args");
     return true;
@@ -75,7 +85,7 @@ bool process_args(int argc, const char **argv) {
 bool deinit_args(void) {
     PRINT_DEBUG("Enter deinit args");
 
-    if (!deinit_filter()) {
+    if (!deinit_vals_buf() || !deinit_filter()) {
         return false;
     }
 
@@ -83,7 +93,7 @@ bool deinit_args(void) {
     return true;
 }
 
-static bool process_opt(int opt) {
+static bool process_opt(int opt, bool *interleaved, bool *separate) {
     static bool include = true;
 
     filter_entry_t entry;
@@ -100,6 +110,14 @@ static bool process_opt(int opt) {
         case argFile:
         case argInstruction:
             return add_filter_arg_entry(include, opt);
+        
+        case argInterleaved:
+            *interleaved = true;
+            return true;
+            
+        case argSeparate:
+            *separate = true;
+            return true;
 
         case argHelp:
             print_help();
@@ -131,6 +149,10 @@ static void print_help(void) {
             "Specifies a source file to filter, or any source file\n"
             "   --instr [OPCODE NAME] | --instr --all   "
             "Specifies an instruction to filter, or any instruction\n"
+            "   --output_interleaved                    "
+            "Outputs a JSON file with interleaved entries from all threads\n"
+            "   --output_separated                      "
+            "Outputs separate JSON files for entries from each thread\n"
             "   --help                                  "
             "Prints this help message\n"
             "\n"
