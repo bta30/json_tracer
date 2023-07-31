@@ -2,6 +2,7 @@
 #define TRACE_ENTRY_H
 
 #include <stdint.h>
+#include <time.h>
 
 #include "dr_api.h"
 
@@ -62,6 +63,7 @@ typedef struct instrument_vals {
     opnd_vals_t srcs[4];
     opnd_vals_t dsts[4];
     int sizeSrcs, sizeDsts;
+    time_t time;
 } instrument_vals_t;
 
 typedef struct reg_info {
@@ -115,6 +117,8 @@ typedef struct trace_entry {
     opnd_info_t srcs[4];
     opnd_info_t dsts[4];
     int sizeSrcs, sizeDsts;
+
+    char time[32];
 } trace_entry_t;
 
 /**

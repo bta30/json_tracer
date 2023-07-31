@@ -300,7 +300,6 @@ static bool test_ok(char *msg, Dwarf_Debug dbg, Dwarf_Error err, int res) {
     if (res  == DW_DLV_ERROR) {
         char *errMsg = dwarf_errmsg(err);
         char fullMsg[strlen(msg) + strlen(errMsg) + 4];
-        sprintf("%s - %s", msg, errMsg);
 
         PRINT_ERROR(fullMsg);
         dwarf_dealloc_error(dbg, err);

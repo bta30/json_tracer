@@ -10,7 +10,7 @@
 
 struct {
     filter_entry_t *entries;
-    int sizeEntries, capacityEntries, maxPathSize;
+    int sizeEntries, capacityEntries, maxValueSize;
     bool defaultInclude;
 } filter;
 
@@ -20,7 +20,7 @@ bool init_filter(bool include) {
     filter.entries = malloc(sizeof(filter.entries[0]) * MIN_CAPACITY);
     filter.sizeEntries = 0;
     filter.capacityEntries = MIN_CAPACITY;
-    filter.maxPathSize = 0;
+    filter.maxValueSize = 0;
     filter.defaultInclude = include;
     
     if (filter.entries == NULL) {
@@ -59,10 +59,10 @@ bool add_filter_entry(filter_entry_t entry) {
 
     filter.entries[filter.sizeEntries++] = entry;
 
-    if (entry.path != NULL) {
-        int pathSize = strlen(entry.path) + 1;
-        if (pathSize > filter.maxPathSize) {
-            filter.maxPathSize = pathSize;
+    if (entry.value != NULL) {
+        int valueSize = strlen(entry.value) + 1;
+        if (valueSize > filter.maxValueSize) {
+            filter.maxValueSize = valueSize;
         }
     }
 
@@ -70,23 +70,29 @@ bool add_filter_entry(filter_entry_t entry) {
     return true;
 }
 
-bool filter_include_pc(void *pc) {
+bool filter_include_instr(instr_t *instr) {
     PRINT_DEBUG("Enter filter include pc");
 
-    char modulePath[filter.maxPathSize], sourcePath[filter.maxPathSize];
-    if (!query_file(pc, modulePath, sourcePath, filter.maxPathSize)) {
+    void *pc = instr_get_app_pc(instr);
+    const char *opcodeName = decode_opcode_name(instr_get_opcode(instr));
+
+    char modulePath[filter.maxValueSize], sourcePath[filter.maxValueSize];
+    if (!query_file(pc, modulePath, sourcePath, filter.maxValueSize)) {
         return false;
     }
 
     bool include = filter.defaultInclude;
-    for (int i = filter.sizeEntries - 1; i >= 0; i++) {
+    for (int i = filter.sizeEntries - 1; i >= 0; i--) {
         filter_entry_t entry = filter.entries[i];
         bool applyEntry = (entry.type == module &&
-                            (entry.path == NULL ||
-                             strcmp(entry.path, modulePath) == 0)) ||
+                            (entry.value == NULL ||
+                             strcmp(entry.value, modulePath) == 0)) ||
                           (entry.type == file &&
-                            (entry.path == NULL ||
-                             strcmp(entry.path, sourcePath) == 0));
+                            (entry.value == NULL ||
+                             strcmp(entry.value, sourcePath) == 0)) ||
+                          (entry.type == instruction &&
+                            (entry.value == NULL ||
+                            strcmp(entry.value, opcodeName) == 0));
 
         if (applyEntry) {
             include = entry.include;

@@ -6,12 +6,22 @@
 #include "filter.h"
 #include "error.h"
 
+typedef enum arg_type {
+    argInclude,
+    argExclude,
+    argModule,
+    argFile,
+    argInstruction,
+    argHelp
+} arg_type_t;
+
 static const struct option opts[] = {
-    (struct option) { "include_module", 1, NULL, 'i' },
-    (struct option) { "exclude_module", 1, NULL, 'e' },
-    (struct option) { "include_file",   1, NULL, 'I' },
-    (struct option) { "exclude_file",   1, NULL, 'E' },
-    (struct option) { "help",           0, NULL, 'h' },
+    (struct option) { "include",        0, NULL, argInclude },
+    (struct option) { "exclude",        0, NULL, argExclude },
+    (struct option) { "module",         1, NULL, argModule },
+    (struct option) { "file",           1, NULL, argFile },
+    (struct option) { "instruction",    1, NULL, argInstruction },
+    (struct option) { "help",           0, NULL, argHelp },
     (struct option) { 0,                0, 0,    0   }
 };
 
@@ -27,10 +37,17 @@ static bool process_opt(int opt);
  */
 static void print_help(void);
 
+/**
+ * Adds a filter entry given arguments
+ *
+ * Returns: Whether successful
+ */
+static bool add_filter_arg_entry(bool include, arg_type_t argType);
+
 bool process_args(int argc, const char **argv) {
     PRINT_DEBUG("Enter process args");
 
-    if (!init_filter(false)) {
+    if (!init_filter(true)) {
         return false;
     }
 
@@ -67,25 +84,24 @@ bool deinit_args(void) {
 }
 
 static bool process_opt(int opt) {
+    static bool include = true;
+
     filter_entry_t entry;
     switch (opt) {
-        case 'i':  // include_module
-            entry = (filter_entry_t) { true, module, optarg };
-            break;
+        case argInclude:
+            include = true;
+            return true;
 
-        case 'e':  // exclude_module
-            entry = (filter_entry_t) { false, module, optarg };
-            break;
+        case argExclude:
+            include = false;
+            return true;
+            
+        case argModule:
+        case argFile:
+        case argInstruction:
+            return add_filter_arg_entry(include, opt);
 
-        case 'I':  // include_file
-            entry = (filter_entry_t) { true, file, optarg };
-            break;
-
-        case 'E':  // exclude_file
-            entry = (filter_entry_t) { false, file, optarg };
-            break;
-
-        case 'h':  // help
+        case argHelp:
             print_help();
             return false;
 
@@ -93,8 +109,6 @@ static bool process_opt(int opt) {
             printf("Error: Invalid client usage - use --help for options\n");
             return false;
     }
-
-    return add_filter_entry(entry);
 }
 
 static void print_help(void) {
@@ -104,17 +118,35 @@ static void print_help(void) {
            "[OPTIONS] supersede the earlier options.\n"
            "It is possible that you may have to further specify a -stack_size "
            "for drrun if your command opens modules with a lot of debugging "
-           "information\n"
+           "information.\n"
            "\n"
            "Options:\n"
-           "    --include_module [PATH]     "
-           "Includes instrucitons in a module in the trace output\n"
-           "    --exclude_module [PATH]     "
-           "Excludes instructions in a module from the trace output\n"
-           "    --include_file [PATH]       "
-           "Includes instructions in a given source file in the trace output\n"
-           "    --exclude_file [PATH]       "
-           "Excludes instructions in a given source file in the trace output\n"
-           "    --help                      "
-           "Prints this help message\n");
+            "   --include                               "
+            "Sets all following options to include what is specified\n"
+            "   --exclude                               "
+            "Sets all following options to exclude what is specified\n"
+            "   --module [PATH] | --module --all        "
+            "Specifies a module to filter, or any module\n"
+            "   --file  [PATH]  | --file --all          "
+            "Specifies a source file to filter, or any source file\n"
+            "   --instr [OPCODE NAME] | --instr --all   "
+            "Specifies an instruction to filter, or any instruction\n"
+            "   --help                                  "
+            "Prints this help message\n"
+            "\n"
+            "Note: By default, the client works as if starting with arguments: "
+            "--include --module --all\n");
+}
+
+static bool add_filter_arg_entry(bool include, arg_type_t argType) {
+    filter_entry_t entry;
+    entry.include = include;
+    entry.value = strcmp(optarg, "--all") == 0 ? NULL : optarg;
+
+    entry.type = argType == argModule ? module :
+                 argType == argFile ? file :
+                 argType == argInstruction ? instruction :
+                 -1;
+
+    return add_filter_entry(entry);
 }

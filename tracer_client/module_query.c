@@ -132,10 +132,6 @@ static bool var_query(query_info_t info, size_t var, query_results_t *results) {
         return true;
     }
 
-    if (!info.info.entries[entry->type].hasByteSize) {
-        return true;
-    }
-
     size_t size = info.info.entries[entry->type].byteSize;
 
     if (!entry->hasAddr && !entry->hasFbregOffset) {
@@ -147,11 +143,11 @@ static bool var_query(query_info_t info, size_t var, query_results_t *results) {
                                      info.query.sp + entry->fbregOffset;
     void *maxAddr = minAddr + size;
 
+    query_result_t result;
     if (info.query.addr < minAddr || info.query.addr >= maxAddr) {
         return true;
     }
 
-    query_result_t result;
     result.type = variable;
     result.name = entry->name;
     result.isLocal = entry->hasFbregOffset;

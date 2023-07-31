@@ -121,14 +121,12 @@ dr_emit_flags_t insert_instrumentation(void *drcontext, void *tag,
         return DR_EMIT_DEFAULT;
     }
 
-    void *pcAddr = instr_get_app_pc(instr);
-    if (!filter_include_pc(pcAddr)) {
+    if (!filter_include_instr(instr)) {
         return DR_EMIT_DEFAULT;
     }
 
-    opnd_t pcOpnd = OPND_CREATE_INTPTR(pcAddr);
-    dr_insert_clean_call(drcontext, instrList, instr, instrument, true,
-                         1, pcOpnd);
+    opnd_t pc = OPND_CREATE_INTPTR(instr_get_app_pc(instr));
+    dr_insert_clean_call(drcontext, instrList, instr, instrument, true, 1, pc);
 
     PRINT_DEBUG("Exited insert instrumentation");
     return DR_EMIT_DEFAULT;
@@ -182,6 +180,7 @@ static instrument_vals_t get_instr_vals(app_pc pc, instr_t *instr) {
     instrument_vals_t entry;
     entry.pc = pc;
     entry.opcode = instr_get_opcode(instr);
+    entry.time = time(NULL);
 
     if (!get_rbp(&entry.rbp)) {
         PRINT_ERROR("Could not get RBP value");

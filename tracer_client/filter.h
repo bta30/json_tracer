@@ -8,10 +8,11 @@ typedef struct filter_entry {
 
     enum {
         module,
-        file
+        file,
+        instruction
     } type;
 
-    const char *path;  // NULL for any path
+    const char *value;  // NULL for any value
 } filter_entry_t;
 
 /**
@@ -39,11 +40,11 @@ bool deinit_filter(void);
 bool add_filter_entry(filter_entry_t entry);
 
 /**
- * Find whether an entry for a given PC should be included or excluded in
- * the final trace
+ * Find whether an entry for a given instruction should be included or excluded
+ * in the final trace
  *
  * Returns: Whether to include
  */
-bool filter_include_pc(void *pc);
+bool filter_include_instr(instr_t *instr);
 
 #endif

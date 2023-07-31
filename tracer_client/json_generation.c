@@ -170,9 +170,9 @@ static bool terminate_json_line(json_file_t *jsonFile) {
 static bool write_entry(json_file_t *jsonFile, trace_entry_t entry) {
     char buf[128];
     sprintf(buf,
-            "{ \"pc\": \"0x%p\", "
+            "{ \"time\": \"%s\", \"pc\": \"%p\", "
             "\"opcode\": { \"name\": \"%s\", \"value\": %i }, ",
-            entry.pc, entry.opcodeName, entry.opcodeValue);
+            entry.time, entry.pc, entry.opcodeName, entry.opcodeValue);
 
     bool success = append_buffer(jsonFile, buf) &&
                    write_line_info(jsonFile, entry) &&
@@ -254,7 +254,7 @@ static bool write_opnd(json_file_t *jsonFile, opnd_info_t *opndInfo) {
         mem_ref_info_t *memRef = &opndInfo->info.memRef;
         sprintf(buf,
                 "\"reference\": { \"type\": \"%s\", \"isFar\": %s, "
-                "\"addr\": %p",
+                "\"addr\": \"%p\"",
                 memRef->type, memRef->isFar, memRef->addr);
 
         if (memRef->outputVal) {

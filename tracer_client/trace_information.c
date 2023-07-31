@@ -14,6 +14,13 @@
 static bool get_entry_info(instrument_vals_t vals, trace_entry_t *entry);
 
 /**
+ * Gets the time of an entry as a string, given a buffer to write it into
+ *
+ * Returns: Whether successful
+ */
+static bool get_time_str(time_t time, char *str);
+
+/**
  * Gets the operand information for given instrumented operand values
  *
  * Returns: Whether successful
@@ -96,6 +103,11 @@ static bool get_entry_info(instrument_vals_t vals, trace_entry_t *entry) {
 
     entry->sizeSrcs = vals.sizeSrcs;
     entry->sizeDsts = vals.sizeDsts;
+    
+    if (!get_time_str(vals.time, entry->time)) {
+        PRINT_ERROR("Unable to get entry time");
+        return false;
+    }
 
     for (int i = 0; i < entry->sizeSrcs; i++) {
         if (!get_opnd_info(vals.srcs[i], &entry->srcs[i])) {
@@ -122,6 +134,16 @@ static bool get_entry_info(instrument_vals_t vals, trace_entry_t *entry) {
     }
 
     return true;
+}
+
+static bool get_time_str(time_t time, char *str) {
+    struct tm *timeInfo = localtime(&time);
+
+    sprintf(str,
+            "%04d-%02d-%02d %02d:%02d:%02d",
+            timeInfo->tm_year + 1900, timeInfo->tm_mon + 1, timeInfo->tm_mday,
+            timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
+            
 }
 
 static bool get_opnd_info(opnd_vals_t vals, opnd_info_t *info) {
