@@ -146,7 +146,6 @@ static bool get_time_str(time_t time, char *str) {
             timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
             
 }
-
 static bool get_opnd_info(opnd_vals_t vals, opnd_info_t *info) {
     info->size = (int)opnd_size_in_bytes(vals.size);
 

@@ -1,5 +1,7 @@
 #include "module_debug_info.h"
 
+#include <string.h>
+
 #include "error.h"
 
 #define MIN_CAPACITY 4
@@ -45,6 +47,13 @@ static bool var_query(query_info_t info, size_t var, query_results_t *results);
 static bool func_query(query_info_t info, size_t func, query_results_t *results);
 
 /**
+ * Queries a namespace
+ *
+ * Returns: Whether successful
+ */
+static bool ns_query(query_info_t info, size_t ns, query_results_t *results);
+
+/**
  * Retrieves the full type for the given entry
  * 
  * Returns: Whether successful
@@ -65,8 +74,32 @@ static bool get_type_compound(Dwarf_Half tag, type_compound_t *compound);
  */
 static bool append_type_compound(type_compound_t compound, type_t *type);
 
+/**
+ * Adds namespace results, given the namespace's name, to the final results
+ *
+ * Returns: Whether successful
+ */
+static bool add_ns_res(char *name, query_results_t nsRes, query_results_t *res);
+
 bool module_query(module_debug_t info, query_t query, query_results_t *res) {
     PRINT_DEBUG("Enter module query");
+
+    if (!init_results(res)) {
+        return false;
+    }
+
+    char *funcName;
+    if (query_function(query.addr, &funcName) && funcName != NULL) {
+        query_result_t result;
+        result.type = function;
+        result.deallocName = true;
+        result.name = funcName;
+
+        bool success = add_result(res, result);
+
+        PRINT_DEBUG("Exit early module query");
+        return success;
+    }
 
     query.addr -= (size_t)query.moduleBase;
     query.pc -= (size_t)query.moduleBase;
@@ -75,10 +108,6 @@ bool module_query(module_debug_t info, query_t query, query_results_t *res) {
     query_info_t queryInfo;
     queryInfo.query = query;
     queryInfo.info = info;
-
-    if (!init_results(res)) {
-        return false;
-    }
 
     for (int i = 0; i < info.sizeRoots; i++) {
         if (!cu_query(queryInfo, info.roots[i], res)) {
@@ -91,10 +120,6 @@ bool module_query(module_debug_t info, query_t query, query_results_t *res) {
 }
 
 static bool init_results(query_results_t *results) {
-    if (results->results != NULL) {
-        return true;
-    }
-
     results->results = malloc(sizeof(results->results[0]) * MIN_CAPACITY);
     results->sizeResults = 0;
     results->capacityResults = MIN_CAPACITY;
@@ -133,7 +158,13 @@ static bool cu_query(query_info_t info, size_t cu, query_results_t *results) {
         bool success = (childTag != DW_TAG_variable || 
                          var_query(info, entry->children[i], results)) &&
                        (childTag != DW_TAG_subprogram ||
-                         func_query(info, entry->children[i], results));
+                         func_query(info, entry->children[i], results)) &&
+                       (childTag != DW_TAG_namespace ||
+                         ns_query(info, entry->children[i], results)) &&
+                       (childTag != DW_TAG_class_type ||
+                         ns_query(info, entry->children[i], results)) &&
+                       (childTag != DW_TAG_structure_type ||
+                         ns_query(info, entry->children[i], results));
         if (!success) {
             return false;
         }
@@ -170,6 +201,7 @@ static bool var_query(query_info_t info, size_t var, query_results_t *results) {
     }
 
     result.type = variable;
+    result.deallocName = false;
     result.name = entry->name;
     result.isLocal = entry->hasFbregOffset;
 
@@ -195,6 +227,7 @@ static bool func_query(query_info_t info, size_t func, query_results_t *results)
     if (info.query.addr == entry->lowPC) {
         query_result_t result;
         result.type = function;
+        result.deallocName = false;
         result.name = entry->name;
 
         if (!add_result(results, result)) {
@@ -222,6 +255,18 @@ static bool func_query(query_info_t info, size_t func, query_results_t *results)
     }
     
     return true;
+}
+
+static bool ns_query(query_info_t info, size_t ns, query_results_t *results) {
+    if (info.info.entries[ns].name == NULL) {
+        return true;
+    }
+
+    query_results_t nsResults;
+
+    return init_results(&nsResults) &&
+           cu_query(info, ns, &nsResults) &&
+           add_ns_res(info.info.entries[ns].name, nsResults, results);
 }
 
 static bool type_query(query_info_t info, size_t entryIndex, type_t *type) {
@@ -342,5 +387,46 @@ static bool append_type_compound(type_compound_t compound, type_t *type) {
     }
 
     type->compound[type->compoundSize++] = compound;
+    return true;
+}
+
+static bool add_ns_res(char *name, query_results_t nsRes, query_results_t *res) {
+    if (nsRes.results == NULL) {
+        return true;
+    }
+
+    int nsNameLen = strlen(name);
+    for (int i = 0; i < nsRes.sizeResults; i++) {
+        query_result_t currRes = nsRes.results[i];
+
+        int nameSize = nsNameLen + 2 + strlen(currRes.name) + 1;
+
+        currRes.deallocName = true;
+        
+        char *newName = malloc(nameSize * sizeof(currRes.name[0]));
+        if (newName == NULL) {
+            PRINT_ERROR("Could not allocate space for new name\n");
+        }
+
+        strcpy(newName, name);
+        strcat(newName, "::");
+        strcat(newName, currRes.name);
+
+        if (strcmp(newName, "std::mutex::lock") == 0)  {
+            printf("FOUND LOCK!\n");
+        }
+
+        currRes.name = newName;
+
+        if (!add_result(res, currRes)) {
+            return false;
+        }
+
+        if (nsRes.results[i].deallocName) {
+            free(nsRes.results[i].name);
+        }
+    }
+
+    free(nsRes.results);
     return true;
 }

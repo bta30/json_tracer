@@ -34,7 +34,8 @@ typedef struct query_result {
         variable
     } type;
 
-    const char *name;
+    bool deallocName;
+    char *name;
     bool isLocal;
     type_t valType;
 } query_result_t;
@@ -71,9 +72,16 @@ bool query_line(void *pc, char **file, uint64_t *line);
 /**
  * Gets module and source file information for an instruction
  *
- * Returns: Whether successful
+ * Returns: Whether no error has occurred
  */
 bool query_file(void *pc, char *modulePath, char *sourcePath, int bufSize);
+
+/**
+ * Gets function name information for a possible PC
+ *
+ * Returns: Whether successful
+ */
+bool query_function(void *pc, char **functionName);
 
 /**
  * Returns the name for a type compound, or NULL on error
