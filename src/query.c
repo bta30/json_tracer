@@ -54,6 +54,17 @@ bool query_addr(void *addr, void *pc, void *bp, query_results_t *results) {
 void deinit_query_results(query_results_t results) {
     PRINT_DEBUG("Enter deinit query results");
 
+    if (results.results == NULL) {
+        return;
+    }
+
+    for (int i = 0; i < results.sizeResults; i++) {
+        query_result_t *res = &results.results[i];
+        if (res->type == variable && res->valType.compound != NULL) {
+            free(res->valType.compound);
+        }
+    }
+
     if (results.results != NULL) {
         free(results.results);
     }
@@ -167,4 +178,35 @@ static bool get_line_info(char *path, size_t offset, drsym_info_t *info) {
     }
 
     return info->file_size == info->file_available_size + 1;
+}
+
+const char *get_type_compound_name(type_compound_t compound) {
+    switch (compound) {
+        case constType:
+            return "const";
+
+        case pointerType:
+            return "pointer";
+
+        case lvalReferenceType:
+            return "lvalueReference";
+
+        case restrictType:
+            return "restrict";
+
+        case rvalReferenceType:
+            return "rvalueReference";
+
+        case sharedType:
+            return "shared";
+
+        case volatileType:
+            return "volatile";
+
+        case arrayType:
+            return "array";
+
+        default:
+            return NULL;
+    }
 }

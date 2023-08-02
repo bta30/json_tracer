@@ -65,6 +65,13 @@ static bool write_opnd(json_file_t *jsonFile, opnd_info_t *opndInfo);
 static bool write_debug_info(json_file_t *jsonFile, query_results_t info);
 
 /**
+ * Writes the information of a type to the JSON file
+ * 
+ * Returns: Whether successful
+ */
+static bool write_type_info(json_file_t *jsonFile, type_t type);
+
+/**
  * Flushes buffer of JSON file
  *
  * Returns: Whether successful
@@ -308,20 +315,26 @@ static bool write_debug_info(json_file_t *jsonFile, query_results_t info) {
         switch (info.results[i].type) {
         case function:
             sprintf(buf,
-                    "{ \"type\": \"function\", \"name\": \"%s\" }",
+                    "{ \"type\": \"function\", \"name\": \"%s\"",
                     info.results[i].name);
             break;
 
         case variable:
             sprintf(buf,
                     "{ \"type\": \"variable\", \"name\": \"%s\", "
-                    "\"isLocal\": %s }",
+                    "\"isLocal\": %s",
                     info.results[i].name,
                     info.results[i].isLocal ? "true" : "false");
             break;
         }
 
-        if (!append_buffer(jsonFile, buf)) {
+        bool success = append_buffer(jsonFile, buf) &&
+                       (info.results[i].type == function ||
+                       (append_buffer(jsonFile, ", \"valueType\": ") &&
+                        write_type_info(jsonFile, info.results[i].valType))) &&
+                       append_buffer(jsonFile, " }");
+
+        if (!success) {
             PRINT_ERROR("Could not append debug information to entry");
             return false;
         }
@@ -330,6 +343,37 @@ static bool write_debug_info(json_file_t *jsonFile, query_results_t info) {
     bool success = append_buffer(jsonFile, " ]");
 
     PRINT_DEBUG("Exit write debug info");
+    return success;
+}
+
+static bool write_type_info(json_file_t *jsonFile, type_t type) {
+    bool success = append_buffer(jsonFile, "{ \"name\": \"") &&
+                   append_buffer(jsonFile, type.name) &&
+                   append_buffer(jsonFile, "\", \"compound\": [ ");
+
+    if (!success) {
+        PRINT_ERROR("Could not write type info name to entry");
+        return false;
+    }
+
+    for (int i = 0; i < type.compoundSize; i++) {
+        type_compound_t compound = type.compound[i];
+        success = (i == 0 || append_buffer(jsonFile, ", ")) &&
+                  append_buffer(jsonFile, "\"") &&
+                  append_buffer(jsonFile, get_type_compound_name(compound)) &&
+                  append_buffer(jsonFile, "\"");
+
+        if (!success) {
+            PRINT_ERROR("Could not write type info compound to entry");
+            return false;
+        }
+    }
+
+    success = append_buffer(jsonFile, " ] }");
+    if (!success) {
+        PRINT_ERROR("Could not terminate type info in entry");
+    }
+
     return success;
 }
 

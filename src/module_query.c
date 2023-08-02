@@ -44,6 +44,27 @@ static bool var_query(query_info_t info, size_t var, query_results_t *results);
  */
 static bool func_query(query_info_t info, size_t func, query_results_t *results);
 
+/**
+ * Retrieves the full type for the given entry
+ * 
+ * Returns: Whether successful
+ */
+static bool type_query(query_info_t info, size_t entryIndex, type_t *type);
+
+/**
+ * Gets the type compound for a DW_TAG
+ *
+ * Returns: Whether successful
+ */
+static bool get_type_compound(Dwarf_Half tag, type_compound_t *compound);
+
+/**
+ * Appends a new compound for a type
+ *
+ * Returns: Whether successful
+ */
+static bool append_type_compound(type_compound_t compound, type_t *type);
+
 bool module_query(module_debug_t info, query_t query, query_results_t *res) {
     PRINT_DEBUG("Enter module query");
 
@@ -128,7 +149,7 @@ static bool var_query(query_info_t info, size_t var, query_results_t *results) {
         return true;
     }
 
-    if (entry->type == -1) {
+    if (!entry->hasType) {
         return true;
     }
 
@@ -152,7 +173,8 @@ static bool var_query(query_info_t info, size_t var, query_results_t *results) {
     result.name = entry->name;
     result.isLocal = entry->hasFbregOffset;
 
-    return add_result(results, result);
+    return type_query(info, entry->type, &result.valType) &&
+           add_result(results, result);
 }
 
 static bool func_query(query_info_t info, size_t func, query_results_t *results) {
@@ -199,5 +221,126 @@ static bool func_query(query_info_t info, size_t func, query_results_t *results)
         }
     }
     
+    return true;
+}
+
+static bool type_query(query_info_t info, size_t entryIndex, type_t *type) {
+    type->compound = NULL;
+    type->compoundSize = 0;
+    type->compoundCapacity = 0;
+    type->name = NULL;
+
+    entry_t *entry = &info.info.entries[entryIndex];
+
+    while (entry != NULL) {
+        switch (entry->tag) {
+            case DW_TAG_base_type:
+            case DW_TAG_typedef:
+            case DW_TAG_union_type:
+            case DW_TAG_class_type:
+            case DW_TAG_interface_type:
+            case DW_TAG_enumeration_type:
+                type->name = entry->name;
+                entry = NULL;
+                break;
+
+            case DW_TAG_const_type:
+            case DW_TAG_packed_type:
+            case DW_TAG_pointer_type:
+            case DW_TAG_reference_type:
+            case DW_TAG_restrict_type:
+            case DW_TAG_rvalue_reference_type:
+            case DW_TAG_shared_type:
+            case DW_TAG_volatile_type:
+            case DW_TAG_array_type:
+                type_compound_t compound;
+                bool success = get_type_compound(entry->tag, &compound) &&
+                               append_type_compound(compound, type);
+                if (!success) {
+                    return false;
+                }
+                if (entry->hasType) {
+                    entry = &info.info.entries[entry->type];
+                } else {
+                    type->name = "void";
+                    entry = NULL;
+                }
+                break;
+
+            default:
+                PRINT_ERROR("Could not determine type in type query");
+                return false;
+        }
+    }
+
+    return true;
+}
+
+static bool get_type_compound(Dwarf_Half tag, type_compound_t *compound) {
+    switch (tag) {
+        case DW_TAG_const_type:
+            *compound = constType;
+            return true;
+
+        case DW_TAG_packed_type:
+            *compound = packedType;
+            return true;
+
+        case DW_TAG_pointer_type:
+            *compound = pointerType;
+            return true;
+
+        case DW_TAG_reference_type:
+            *compound = lvalReferenceType;
+            return true;
+
+        case DW_TAG_restrict_type:
+            *compound = restrictType;
+            return true;
+
+        case DW_TAG_rvalue_reference_type:
+            *compound = rvalReferenceType;
+            return true;
+
+        case DW_TAG_shared_type:
+            *compound = sharedType;
+            return true;
+
+        case DW_TAG_volatile_type:
+            *compound = volatileType;
+            return true;
+
+        case DW_TAG_array_type:
+            *compound = arrayType;
+            return true;
+
+        default:
+            PRINT_ERROR("Given invalid compound type");
+            return false;
+    }
+}
+
+static bool append_type_compound(type_compound_t compound, type_t *type) {
+    if (type->compound == NULL) {
+        type->compound = malloc(MIN_CAPACITY * sizeof(type->compound[0]));
+        type->compoundCapacity = MIN_CAPACITY;
+
+        if (type->compound == NULL) {
+            PRINT_ERROR("Could not allocate space for type compound");
+            return false;
+        }
+    }
+
+    if (type->compoundSize == type->compoundCapacity) {
+        type->compoundCapacity *= 2;
+        type->compound = reallocarray(type->compound, type->compoundCapacity,
+                                      sizeof(type->compound[0]));
+        if (type->compound == NULL) {
+            PRINT_ERROR("Could not allocate further space for type compound");
+            return false;
+        }
+    }
+
+    type->compound[type->compoundSize++] = compound;
     return true;
 }

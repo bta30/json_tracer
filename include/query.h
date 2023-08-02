@@ -9,6 +9,25 @@ typedef struct query {
     void *addr, *pc, *sp, *moduleBase;
 } query_t;
 
+typedef enum type_compound {
+    constType,
+    packedType,
+    pointerType,
+    lvalReferenceType,
+    restrictType,
+    rvalReferenceType,
+    sharedType,
+    volatileType,
+    arrayType
+} type_compound_t;
+
+typedef struct type {
+    type_compound_t *compound;
+    int compoundSize, compoundCapacity;
+
+    const char *name;
+} type_t;
+
 typedef struct query_result {
     enum {
         function,
@@ -17,6 +36,7 @@ typedef struct query_result {
 
     const char *name;
     bool isLocal;
+    type_t valType;
 } query_result_t;
 
 typedef struct query_results {
@@ -54,5 +74,10 @@ bool query_line(void *pc, char **file, uint64_t *line);
  * Returns: Whether successful
  */
 bool query_file(void *pc, char *modulePath, char *sourcePath, int bufSize);
+
+/**
+ * Returns the name for a type compound, or NULL on error
+ */
+const char *get_type_compound_name(type_compound_t compound);
 
 #endif
