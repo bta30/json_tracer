@@ -163,7 +163,7 @@ static void print_help(void) {
 static bool add_filter_arg_entry(bool include, arg_type_t argType) {
     filter_entry_t entry;
     entry.include = include;
-    entry.value = strcmp(optarg, "--all") == 0 ? NULL : optarg;
+    entry.value = strcmp(optarg, "--all") == 0 ? NULL : realpath(optarg, NULL);
 
     entry.type = argType == argModule ? module :
                  argType == argFile ? file :

@@ -35,6 +35,12 @@ bool init_filter(bool include) {
 bool deinit_filter(void) {
     PRINT_DEBUG("Enter deinit filter");
 
+    for (int i = 0; i < filter.sizeEntries; i++) {
+        if (filter.entries[i].value != NULL) {
+            free(filter.entries[i].value);
+        }
+    }
+
     if (filter.entries == NULL) {
         free(filter.entries);
     }

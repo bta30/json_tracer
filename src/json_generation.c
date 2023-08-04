@@ -249,7 +249,7 @@ static bool write_opnd(json_file_t *jsonFile, opnd_info_t *opndInfo) {
         break;
 
     case pc:
-        sprintf(buf, "\"value\": %p", opndInfo->info.pc);
+        sprintf(buf, "\"value\": \"%p\"", opndInfo->info.pc);
         break;
 
     case reg:
@@ -277,6 +277,8 @@ static bool write_opnd(json_file_t *jsonFile, opnd_info_t *opndInfo) {
                     memRef->base, memRef->baseVal, memRef->index,
                     memRef->indexVal, memRef->scale, memRef->disp);
         }
+
+        strcat(buf, " }");
         break;
     }
 
@@ -309,22 +311,24 @@ static bool write_debug_info(json_file_t *jsonFile, query_results_t info) {
             return false;
         }
 
-        size_t bufLen = strlen(info.results[i].name) + 64;
+        size_t bufLen = strlen(info.results[i].name) + 128;
         char buf[bufLen];
 
         switch (info.results[i].type) {
         case function:
             sprintf(buf,
-                    "{ \"type\": \"function\", \"name\": \"%s\"",
-                    info.results[i].name);
+                    "{ \"type\": \"function\", \"name\": \"%s\", "
+                    "\"address\": \"%p\"",
+                    info.results[i].name, info.results[i].address);
             break;
 
         case variable:
             sprintf(buf,
                     "{ \"type\": \"variable\", \"name\": \"%s\", "
-                    "\"isLocal\": %s",
+                    "\"isLocal\": %s, \"address\": \"%p\"",
                     info.results[i].name,
-                    info.results[i].isLocal ? "true" : "false");
+                    info.results[i].isLocal ? "true" : "false",
+                    info.results[i].address);
             break;
         }
 

@@ -88,19 +88,6 @@ bool module_query(module_debug_t info, query_t query, query_results_t *res) {
         return false;
     }
 
-    char *funcName;
-    if (query_function(query.addr, &funcName) && funcName != NULL) {
-        query_result_t result;
-        result.type = function;
-        result.deallocName = true;
-        result.name = funcName;
-
-        bool success = add_result(res, result);
-
-        PRINT_DEBUG("Exit early module query");
-        return success;
-    }
-
     query.addr -= (size_t)query.moduleBase;
     query.pc -= (size_t)query.moduleBase;
     query.sp -= (size_t)query.moduleBase;
@@ -115,8 +102,26 @@ bool module_query(module_debug_t info, query_t query, query_results_t *res) {
         }
     }
 
+    if (res->sizeResults != 0) {
+        PRINT_DEBUG("Exit module query early");
+        return true;
+    }
+
+    char *funcName;
+    void *addr = (size_t)query.addr + query.moduleBase;
+    bool success = true;
+    if (query_function(addr, &funcName) && funcName != NULL) {
+        query_result_t result;
+        result.type = function;
+        result.deallocName = true;
+        result.name = funcName;
+        result.address = addr;
+
+        success = add_result(res, result);
+    }
+
     PRINT_DEBUG("Exit module query");
-    return true;
+    return success;
 }
 
 static bool init_results(query_results_t *results) {
@@ -203,6 +208,7 @@ static bool var_query(query_info_t info, size_t var, query_results_t *results) {
     result.type = variable;
     result.deallocName = false;
     result.name = entry->name;
+    result.address = info.query.moduleBase + (size_t)minAddr;
     result.isLocal = entry->hasFbregOffset;
 
     return type_query(info, entry->type, &result.valType) &&
@@ -229,6 +235,7 @@ static bool func_query(query_info_t info, size_t func, query_results_t *results)
         result.type = function;
         result.deallocName = false;
         result.name = entry->name;
+        result.address = info.query.moduleBase + (size_t) entry->lowPC;
 
         if (!add_result(results, result)) {
             return false;

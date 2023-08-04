@@ -36,6 +36,7 @@ typedef struct query_result {
 
     bool deallocName;
     char *name;
+    void *address;
     bool isLocal;
     type_t valType;
 } query_result_t;
