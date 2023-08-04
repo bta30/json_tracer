@@ -3,28 +3,45 @@ A DynamoRIO client to generate trace of a program using DynamoRIO, outputting
 in JSON
 
 ## Dependencies
-To build the client, DynamoRIO and `libdwarf` are required. Importantly,
-`libdwarf` must be compiled as position independent.
+This requires an AMD64 machine running Linux with core utilities installed.
+Further dependencies are fetched automatically when building the client.
 
-## Example Sum Program
-This repository comes with an example program in `sum_program/` to test the
-tracer.
+## How to use
+To build the client, run `./build.sh` in the root directory of this repository.
+This will fetch the required dependencies and build the client.
 
-The example program is given a number of threads and some file names,
-summarising the files using that many threads. Each file is a CSV file with
-columns for:
-    - tag (unsigned integer)
-    - value (float)
+To run the client to generate a trace of `ls` using arguments ARGS, run
+`./run.sh ARGS -- ls`. Note that this requires building first.
 
-Any lines not in this format are ignored.
+To perform the provided tests on the client, run `./test.sh`.
 
-This program returns the mean value for each tag over all files.
+## Arguments
+The client must be provided a command to trace after its other options. An
+option for the output format must be given:
+  - `--output_interleaved` outputs a trace of all threads interleaved
+  - `--output_separated` outputs separate trace files for each thread
+  
+Then, a command must be given, separated with ` -- `. For example, to trace
+`ls -a` with an interleaved output, run:
+  `./run.sh --output_interleaved -- ls -a`
 
-To execute the example program, build it using `make` and run `sum`. For
-example, to execute it using two threads over the provided CSV files, run in
-the `sum_program/` directory:
+Other options may be used for filtering entries to output in the trace.
+These allow us to include or exclude any entries corresponding to code in
+any dynamically loaded module, in any source code file, or using any specific
+instruction. By default, all entries are included in the trace.
 
-```
-make
-./sum 2 table*
-```
+To indicate a module, use `--module` followed by the path of the path. Likewise,
+for a source file use `--file` or for an instruction use `--instr` followed by
+the instruction's name. Instead of a path or instruction name, `--all` may be
+used to indicate any match.
+
+To include the following indicated options, use `--include`. To exclude the
+following indicated options, use `--exclude`.
+
+Note that later options take precedence over earlier options.
+
+For example, to only include `call` or `ret` instructions when tracing `ls`,
+run: `./run.sh --exclude --instruction --all --include --instr call --instr ret -- ls`
+
+To only include the file at source path `src/main.c` when tracing `ls`, run:
+`./run.sh --exclude --file --all --include --file src/main.c -- ls`
