@@ -12,7 +12,7 @@ typedef struct filter_entry {
         instruction
     } type;
 
-    const char *value;  // NULL for any value
+    char *value;  // NULL for any value
 } filter_entry_t;
 
 /**

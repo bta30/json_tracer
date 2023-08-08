@@ -13,7 +13,7 @@
  *
  * Returns: The descriptor of the opened file
  */
-static file_t open_unique_file();
+static file_t open_unique_file(const char *prefix);
 
 /**
  * Writes the first line of the JSON file
@@ -85,11 +85,11 @@ static bool flush_buffer(json_file_t *jsonFile);
  */
 static bool append_buffer(json_file_t *jsonFile, const char *str);
 
-json_file_t open_json_file(void) {
+json_file_t open_json_file(const char *prefix) {
     PRINT_DEBUG("Entered open JSON file");
 
     json_file_t jsonFile;
-    jsonFile.fd = open_unique_file();
+    jsonFile.fd = open_unique_file(prefix);
     jsonFile.file = fdopen(jsonFile.fd, "w");
     jsonFile.firstLine = true;
     jsonFile.size = 0;
@@ -134,9 +134,9 @@ bool add_json_entry(json_file_t *jsonFile, trace_entry_t entry) {
     PRINT_DEBUG("Exited add JSON entry");
 }
 
-static file_t open_unique_file() {
-    file_t fd = drx_open_unique_file("./", "trace", "log",
-                                         DR_FILE_ALLOW_LARGE, NULL, 0);
+static file_t open_unique_file(const char *prefix) {
+    file_t fd = drx_open_unique_file("./", prefix, "log",
+                                     DR_FILE_ALLOW_LARGE, NULL, 0);
 
     if (fd == INVALID_FILE) {
         PRINT_ERROR("Unable to open unique file");

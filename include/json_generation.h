@@ -14,11 +14,11 @@ typedef struct json_file {
 } json_file_t;
 
 /**
- * Open a unique file to output JSON
+ * Open a unique file to output JSON with a given prefix
  *
  * Returns: The file opened
  */
-json_file_t open_json_file(void);
+json_file_t open_json_file(const char *prefix);
 
 /**
  * Closes a given JSON file

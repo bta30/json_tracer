@@ -38,6 +38,48 @@ class GlobalVariable:
     def is_mutex(self):
         return self.type == 'mutex'
 
+def is_valid_ref(ref):
+    if 'type' not in ref or 'isFar' not in ref or 'addr' not in ref:
+        return False
+
+    if ref['type'] in ('absAddr', 'pcRelAddr'):
+        return True
+    elif ref['type'] == 'baseDisp':
+        return 'base' in ref and 'name' in ref['base'] and \
+               'value' in ref['base'] and 'index' in ref and \
+               'name' in ref['index'] and 'value' in ref['index'] and \
+               'scale' in ref and 'disp' in ref
+    else:
+        return False
+
+def is_valid_opnd(opnd):
+    if 'type' not in opnd or 'size' not in opnd:
+        return False
+
+    if opnd['type'] in ('immedInt', 'immedFloat', 'pc'):
+        return 'value' in opnd
+    elif opnd['type'] == 'reg':
+        return 'register' in opnd and 'name' in opnd['register'] and \
+               'value' in opnd['register']
+    elif opnd['type'] == 'memRef':
+        return 'reference' in opnd and is_valid_ref(opnd['reference'])
+    else:
+        return False
+
+def is_valid_entry(entry):
+    valid =  'time' in entry and 'tid' in entry and 'opcode' in entry and \
+             'name' in entry['opcode'] and 'value' in entry['opcode'] and \
+             'srcs' in entry and 'dsts' in entry
+    
+    if not valid:
+        return False
+
+    for opnd in entry['srcs'] + entry['dsts']:
+        if not is_valid_opnd(opnd):
+            return False
+
+    return True
+
 def variable_in_set(var, setVars):
     for i in setVars:
         if i.addr == var.addr:
@@ -48,6 +90,9 @@ def get_global_variables(jsonTrace):
     globalVariables = set()
 
     for entry in jsonTrace:
+        if not is_valid_entry(entry):
+            raise Exception('Invalid trace format')
+
         for opnd in entry['srcs'] + entry['dsts']:
             var = GlobalVariable(opnd)
             if var.is_valid() and not variable_in_set(var, globalVariables):
@@ -117,6 +162,8 @@ def locksStr(locks):
 
 def eraser_lockset_one_var(jsonTrace, mutexes, variable):
     firstThread = 0
+    lastThread = 0
+    newThreadCandidates = {}
     threadCandidates = {}
     threadLocks = {}
 
@@ -126,8 +173,8 @@ def eraser_lockset_one_var(jsonTrace, mutexes, variable):
         entry = jsonTrace[i]
         tid = entry['tid']
 
-        if tid not in threadCandidates:
-            threadCandidates[tid] = set(mutexes)
+        if tid not in newThreadCandidates:
+            newThreadCandidates[tid] = set(mutexes)
         if tid not in threadLocks:
             threadLocks[tid] = set()
 
@@ -145,14 +192,19 @@ def eraser_lockset_one_var(jsonTrace, mutexes, variable):
             if state == 'virgin':
                 state = 'exclusive'
                 firstThread = tid
+                lastThread = tid
 
             if state == 'exclusive' and tid != firstThread:
                 state = 'shared'
 
             if state == 'shared':
-                cands = threadCandidates[tid]
+                if lastThread != tid:
+                    threadCandidates[lastThread] = newThreadCandidates[lastThread]
+                    lastThread = tid
+
+                cands = newThreadCandidates[tid]
                 locks = threadLocks[tid]
-                threadCandidates[tid] = set.intersection(cands, locks)
+                newThreadCandidates[tid] = set.intersection(cands, locks)
 
     candidates = set(mutexes)
     for tid in threadCandidates:
@@ -165,14 +217,23 @@ def get_json(filePath):
         return json.load(file)
 
 def eraser_lockset_file(filePath):
-    jsonTrace = get_json(filePath)
+    try:
+        jsonTrace = get_json(filePath)
+    except Exception as e:
+        print(f'Error: Could not open {filePath} as JSON - {e}')
+        return
 
-    globalVariables = get_global_variables(jsonTrace)
+    try:
+        globalVariables = get_global_variables(jsonTrace)
+    except Exception as e:
+        print(f'Error: {e}')
+        return
+
     mutexes = [var for var in globalVariables if var.is_mutex()]
     variables = [var for var in globalVariables if not var.is_mutex()]
 
     for var in variables:
         locks = eraser_lockset_one_var(jsonTrace, mutexes, var)
         print(f'{var.name}, {[l.name for l in locks]}')
-
+ 
 eraser_lockset_file(sys.argv[1])

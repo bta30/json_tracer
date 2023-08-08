@@ -13,12 +13,17 @@ typedef struct vals_buf {
     json_file_t file;
 } vals_buf_t;
 
+typedef struct vals_buf_opts {
+    bool interleaved, separate;
+    const char *prefix;
+} vals_buf_opts_t;
+
 /**
  * Initialises the values buffer
  *
  * Returns: Whether successful
  */
-bool init_vals_buf(bool separate, bool interleaved);
+bool init_vals_buf(vals_buf_opts_t opts);
 
 /**
  * Deinitialises the values buffer

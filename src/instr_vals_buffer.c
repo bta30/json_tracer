@@ -9,7 +9,7 @@
 #include "error.h"
 
 static struct {
-    bool separate, interleaved;
+    vals_buf_opts_t opts;
     int tlsSlot;
     vals_buf_t interleavedBuf;
     void *bufLock;
@@ -44,13 +44,11 @@ static bool set_thread_buffer(void *drcontext, vals_buf_t *buf);
  */
 static vals_buf_t *get_thread_buffer(void *drcontext);
 
-bool init_vals_buf(bool separate, bool interleaved) {
-    bufDetails.separate = separate;
-    bufDetails.interleaved = interleaved;
+bool init_vals_buf(vals_buf_opts_t opts) {
+    bufDetails.opts = opts;
 
     bool success = true;
-
-    if (bufDetails.separate) {
+    if (bufDetails.opts.separate) {
         bufDetails.tlsSlot = drmgr_register_tls_field();
         if (bufDetails.tlsSlot == -1) {
             PRINT_ERROR("Could not register tls slot");
@@ -58,7 +56,7 @@ bool init_vals_buf(bool separate, bool interleaved) {
         }
     }
 
-    if (success && bufDetails.interleaved) {
+    if (success && bufDetails.opts.interleaved) {
         if (!init_buf(&bufDetails.interleavedBuf)) {
             PRINT_ERROR("Could not initialised interleaved buffer");
             success = false;
@@ -70,14 +68,14 @@ bool init_vals_buf(bool separate, bool interleaved) {
 }
 
 bool deinit_vals_buf(void) {
-    bool success = !bufDetails.separate ||
+    bool success = !bufDetails.opts.separate ||
                    drmgr_unregister_tls_field(bufDetails.tlsSlot);
     if (!success) {
         PRINT_ERROR("Could not unregister tls slot");
         return false;
     }
 
-    if (bufDetails.interleaved) {
+    if (bufDetails.opts.interleaved) {
         dr_mutex_destroy(bufDetails.bufLock);
         deinit_buf(&bufDetails.interleavedBuf);
     }
@@ -88,7 +86,7 @@ bool deinit_vals_buf(void) {
 void thread_init(void *drcontext) {
     PRINT_DEBUG("Entered thread init");
 
-    if (!bufDetails.separate) {
+    if (!bufDetails.opts.separate) {
         return;
     }
 
@@ -110,7 +108,7 @@ void thread_init(void *drcontext) {
 void thread_deinit(void *drcontext) {
     PRINT_DEBUG("Entered thread deinit");
 
-    if (!bufDetails.separate) {
+    if (!bufDetails.opts.separate) {
         return;
     }
 
@@ -124,12 +122,12 @@ void thread_deinit(void *drcontext) {
 bool entry_enqueue(void *drcontext, instrument_vals_t entry) {
     bool success = true;
 
-    if (bufDetails.separate) {
+    if (bufDetails.opts.separate) {
         vals_buf_t *buf = get_thread_buffer(drcontext);
         success = buf_enqueue(buf, entry);
     }
 
-    if (success && bufDetails.interleaved) {
+    if (success && bufDetails.opts.interleaved) {
         dr_mutex_lock(bufDetails.bufLock);
         success = buf_enqueue(&bufDetails.interleavedBuf, entry);
         dr_mutex_unlock(bufDetails.bufLock);
@@ -153,7 +151,7 @@ bool entry_dequeue(vals_buf_t *buf, instrument_vals_t *entry) {
 static bool init_buf(vals_buf_t *buf) {
     buf->head = 0;
     buf->size = 0;
-    buf->file = open_json_file();
+    buf->file = open_json_file(bufDetails.opts.prefix);
 
     return true;
 }

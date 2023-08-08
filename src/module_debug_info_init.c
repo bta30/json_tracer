@@ -242,6 +242,14 @@ static bool addattr_hipc(dwarf_t dwarf, Dwarf_Attribute attr, attrs_t *attrs);
  */
 static bool addattr_loc(dwarf_t dwarf, Dwarf_Attribute attr, attrs_t *attrs);
 
+/**
+ * Gets the head entry of a location list
+ *
+ * Returns: Whether successful
+ */
+static bool get_loc_entry(dwarf_t dwarf, Dwarf_Loc_Head_c head, Dwarf_Locdesc_c *entry);
+
+
 bool get_module_debug(const char *path, module_debug_t *info) {
     PRINT_DEBUG("Enter get module debug");
 
@@ -740,7 +748,7 @@ static bool get_attrs(dwarf_t dwarf, Dwarf_Die die, attrs_t *attrs) {
 static bool add_attr(dwarf_t dwarf, Dwarf_Attribute attr, attrs_t *attrs) {
     Dwarf_Half attrNum;
     Dwarf_Error err;
-    
+
     int res = dwarf_whatattr(attr, &attrNum, &err);
     if (!test_ok("Could not get attribute number", dwarf.dbg, err, res)) {
         return false;
@@ -848,34 +856,24 @@ static bool addattr_loc(dwarf_t dwarf, Dwarf_Attribute attr, attrs_t *attrs) {
     unsigned int kind;
     res = dwarf_get_loclist_head_kind(locListHead, &kind, &err);
     bool success = test_ok("Could not get location list head kind",
-                          dwarf.dbg, err, res);
+                           dwarf.dbg, err, res);
     if (!success) {
+        dwarf_dealloc_loc_head_c(locListHead);
         return false;
     }
 
     if (kind != DW_LKIND_expression) {
         PRINT_ERROR("Location list head was not DW_LKIND_expression");
+        dwarf_dealloc_loc_head_c(locListHead);
+        return false;
     }
 
-    Dwarf_Small lleValue;
-    Dwarf_Unsigned rawLowPC, rawHighPC;
-    Dwarf_Bool debugAddrUnavail;
-    Dwarf_Addr lowPCCooked, highPCCooked;
-    Dwarf_Unsigned locExprOpCount;
     Dwarf_Locdesc_c locEntry;
-    Dwarf_Small locListSource;
-    Dwarf_Unsigned exprOffset, locDescOffset;
-    
-    res = dwarf_get_locdesc_entry_d(locListHead, 0, &lleValue, &rawLowPC,
-                                    &rawHighPC, &debugAddrUnavail,
-                                    &lowPCCooked, &highPCCooked,
-                                    &locExprOpCount, &locEntry, &locListSource,
-                                    &exprOffset, &locDescOffset, &err);
-    
-    success = test_ok("Could not get location expression details",
-                      dwarf.dbg, err, res);
-    if (!success) {
+    if (!get_loc_entry(dwarf, locListHead, &locEntry)) {
+        PRINT_ERROR("Could not get location list head entry");
+        dwarf_dealloc_loc_head_c(locListHead);
         return false;
+        
     }
 
     Dwarf_Small operator;
@@ -887,17 +885,42 @@ static bool addattr_loc(dwarf_t dwarf, Dwarf_Attribute attr, attrs_t *attrs) {
     success = test_ok("Could not get location expression raw values",
                       dwarf.dbg, err, res);
     if (!success) {
+        dwarf_dealloc_loc_head_c(locListHead);
         return false;
     }
 
     if (operator == DW_OP_fbreg) {
         attrs->hasFbregOffset = true;
         attrs->fbregOffset = (int)opnd[0];
-        return true;
-    }
-    
-    if (operator == DW_OP_addr) {
+    } else if (operator == DW_OP_addr) {
         attrs->hasAddr = true;
         attrs->addr = opnd[0];
     }
+
+    dwarf_dealloc_loc_head_c(locListHead);
+    return true;
+}
+
+static bool get_loc_entry(dwarf_t dwarf, Dwarf_Loc_Head_c head, Dwarf_Locdesc_c *entry) {
+    Dwarf_Small lleValue;
+    Dwarf_Unsigned rawLowPC, rawHighPC;
+    Dwarf_Bool debugAddrUnavail;
+    Dwarf_Addr lowPCCooked, highPCCooked;
+    Dwarf_Unsigned locExprOpCount;
+    Dwarf_Small locListSource;
+    Dwarf_Unsigned exprOffset, locDescOffset;
+    Dwarf_Error err;
+    
+    int res = dwarf_get_locdesc_entry_d(head, 0, &lleValue, &rawLowPC,
+                                    &rawHighPC, &debugAddrUnavail,
+                                    &lowPCCooked, &highPCCooked,
+                                    &locExprOpCount, entry, &locListSource,
+                                    &exprOffset, &locDescOffset, &err);
+    
+    bool success = test_ok("Could not get location expression details",
+                      dwarf.dbg, err, res);
+    if (!success) {
+        return false;
+    }
+
 }

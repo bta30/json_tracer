@@ -15,6 +15,7 @@ typedef enum arg_type {
     argInstruction,
     argInterleaved,
     argSeparate,
+    argPrefix,
     argHelp
 } arg_type_t;
 
@@ -26,6 +27,7 @@ static const struct option opts[] = {
     (struct option) { "instruction",        1, NULL, argInstruction },
     (struct option) { "output_interleaved", 0, NULL, argInterleaved },
     (struct option) { "output_separate",    0, NULL, argSeparate },
+    (struct option) { "output_prefix",      1, NULL, argPrefix },
     (struct option) { "help",               0, NULL, argHelp },
     (struct option) { 0,                    0, 0,    0   }
 };
@@ -35,7 +37,7 @@ static const struct option opts[] = {
  *
  * Returns: Whether successful
  */
-static bool process_opt(int opt, bool *interleaved, bool *separate);
+static bool process_opt(int opt, vals_buf_opts_t *outputOpts);
 
 /**
  * Prints the help message
@@ -64,17 +66,21 @@ bool process_args(int argc, const char **argv) {
     memcpy(nonConstArgv, argv, sizeof(argv[0]) * argc);
 
     int opt;
-    bool interleaved = false, separate = false;
+    vals_buf_opts_t outputOpts = { false, false, NULL };
     while ((opt = getopt_long(argc, nonConstArgv, "", opts, NULL)) != -1) {
-        if (!process_opt(opt, &interleaved, &separate)) {
+        if (!process_opt(opt, &outputOpts)) {
             free(nonConstArgv);
             return false;
         }
     }
-    
+
     free(nonConstArgv);
 
-    if (!init_vals_buf(separate, interleaved)) {
+    if (outputOpts.prefix == NULL) {
+        outputOpts.prefix = "trace";
+    }
+
+    if (!init_vals_buf(outputOpts)) {
         return false;
     }
 
@@ -93,10 +99,8 @@ bool deinit_args(void) {
     return true;
 }
 
-static bool process_opt(int opt, bool *interleaved, bool *separate) {
+static bool process_opt(int opt, vals_buf_opts_t *outputOpts) {
     static bool include = true;
-
-    filter_entry_t entry;
     switch (opt) {
         case argInclude:
             include = true;
@@ -112,11 +116,15 @@ static bool process_opt(int opt, bool *interleaved, bool *separate) {
             return add_filter_arg_entry(include, opt);
         
         case argInterleaved:
-            *interleaved = true;
+            outputOpts->interleaved = true;
             return true;
             
         case argSeparate:
-            *separate = true;
+            outputOpts->separate = true;
+            return true;
+
+        case argPrefix:
+            outputOpts->prefix = optarg;
             return true;
 
         case argHelp:
@@ -153,11 +161,13 @@ static void print_help(void) {
             "Outputs a JSON file with interleaved entries from all threads\n"
             "   --output_separated                      "
             "Outputs separate JSON files for entries from each thread\n"
+            "   --output_prefix [PREFIX]                "
+            "Sets the prefix for the output of the trace\n"
             "   --help                                  "
             "Prints this help message\n"
             "\n"
             "Note: By default, the client works as if starting with arguments: "
-            "--include --module --all\n");
+            "--output_prefix trace --include --module --all\n");
 }
 
 static bool add_filter_arg_entry(bool include, arg_type_t argType) {

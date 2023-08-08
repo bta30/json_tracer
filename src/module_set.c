@@ -43,6 +43,7 @@ bool init_module_set(void) {
     }
 
     PRINT_DEBUG("Exit init module set");
+    return true;
 }
 
 bool deinit_module_set(void) {
