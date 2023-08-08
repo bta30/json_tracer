@@ -3,20 +3,19 @@ import json
 
 def get_debug_info_string(debugInfo):
     if debugInfo['type'] == 'function':
-        return "(%s)" % (debugInfo['name'])
+        return '(' + debugInfo['name'] + ')'
     else:
-        output = "(%s: %s" % \
-                 (debugInfo['name'], debugInfo['valueType']['name'])
+        output = '(' + debugInfo['name'] + ': ' + debugInfo['valueType']['name']
 
         for compound in debugInfo['valueType']['compound']:
-            output += ";%s" % (compound)
+            output += ';' + compound
 
         if debugInfo['isLocal']:
-            output += " local"
+            output += ' local'
         else:
-            output += " global"
+            output += ' global'
 
-        output += ")"
+        output += ')'
 
         return output
 
@@ -33,24 +32,25 @@ def get_opnd_string(opnd):
  
     if 'debugInfo' in opnd:
         for debugInfo in opnd['debugInfo']:
-            output += " "
-            ouput += get_debug_info_string(debugInfo)
+            output += ' ' + get_debug_info_string(debugInfo)
 
     return output
     
-
 def output_trace_json(jsonTrace):
     for entry in jsonTrace:
-        if 'lineInfo' not in entry:
-            continue
+        output = entry['time'] + '\t' + str(entry['tid']) + '\t'
 
-        output = '%s\t%s\t%s\t%i\t%s\t' %
-                 (entry['time'], entry['tid'], entry['lineInfo']['file'],
-                 entry['lineInfo']['line'], entry['opcode']['name'])
+        if 'lineInfo' in entry:
+            output += entry['lineInfo']['file'] + '\t' + \
+                      str(entry['lineInfo']['line']) + '\t'
+        else:
+            output += '\t\t'
+
+        output += entry['opcode']['name'] + '\t'
 
         for opnd in entry['srcs'] + entry['dsts']:
             output += get_opnd_string(opnd)
-            output += "\t"
+            output += '\t'
 
         print(output)
 

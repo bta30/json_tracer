@@ -22,7 +22,7 @@ maximal DWARF 4 debugging information and without optimisation.
 
 ## Tracer Options
 
-### Required Options
+### Output Options
 An option for the output format must be given, otherwise no output will be
 created:
   - `--output_interleaved` outputs a trace of all threads interleaved in one
@@ -33,6 +33,17 @@ Then, a program must be given with its arguments, separated with ` -- `. For
 example, to trace `ls -a` with an interleaved output, run:
 
 ```./run.sh --output_interleaved -- ls -a```
+
+By default, the trace outputs in unique files at relative paths
+`[PREFIX].xxxx.log`, where `[PREFIX]` is a prefix passed to the client and
+`xxxx` is a four-digit numeral incremented to output at a unique file.
+
+By default, `[PREFIX]` is `trace`, so we get outputs `trace.0000.log`,
+`trace.0001.log`, etc. To change `[PREFIX]`, pass the client the option
+`--output_prefix [PREFIX]`. For example, to trace `ls -a` with an
+interleaved output in a file `ls_trace.xxxx.log`, run:
+
+```./run.sh --output_interleaved --output_prefix ls_trace -- ls -a```
 
 ### Filtering Options
 Other options may be used for filtering which entries to output in the trace.
@@ -168,3 +179,33 @@ If the `type` is `variable` then the following fields will also be present:
       - `array`  - an array of values (`[]` in C)
     
     For example, a volatile pointer to a constant integer may correspond to `valueType`: `{ "name": "int",  "compound": [ "const", "pointer", "volatile" ] }`
+
+## Scripts
+This client comes with some scripts with some Python scripts for performing
+simple analyses on traces. These are found in the `scripts/` directory.
+
+### Human Readable Output
+This script, `human_readable_output.py`, converts the contents of a given trace
+to a more human readable output. For example, to convert a trace
+`trace.0000.log`, run:
+```python scripts/human_readable_output.py trace.0000.log```
+
+Each entry becomes a line of tab-separated values for time, thread ID,
+source file (if available), source file line (if available), opcode name
+and operands (with debug information if available).
+
+### Eraser
+This script, `eraser_lockset.py`, performs a modified version of the Eraser
+algorithm, returning the possible locks associated with certain resources for
+a given trace file. For multi-threaded applications, it is recommended to
+generate interleaved traces for this. For example, to get locks for resources
+in `trace.0000.log`, run:
+```python scripts/eraser_lockset.py trace.0000.log```
+
+These resources are global variables that are accessed under other global
+variables that are locks (detected as having type `std::mutex`). This are
+only global variables for which debugging information is found.
+
+It returns output of one line for each global variable with a list of each
+possible mutex. For example, if global variable `a` is locked with lock `b`,
+then there will be line `a, ['b']`, or this list may contain other locks.
