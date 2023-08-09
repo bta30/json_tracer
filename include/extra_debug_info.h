@@ -5,6 +5,8 @@
 
 #include "dr_api.h"
 
+#include "module_debug_info.h"
+
 typedef struct debug_file {
     FILE *file;
     bool firstLine;
@@ -23,10 +25,10 @@ bool open_debug_file(const char *path, debug_file_t *file);
 void close_debug_file(debug_file_t file);
 
 /**
- * Writes information to a debug_file_t given a module's path
+ * Writes information to a debug_file_t given a module's debugging information
  *
  * Returns: Whether successful
  */
-bool write_module_debug_info(debug_file_t *file, const char *path);
+bool write_module_debug_info(debug_file_t *file, module_debug_t *info);
 
 #endif

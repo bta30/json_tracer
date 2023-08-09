@@ -419,10 +419,6 @@ static bool add_ns_res(char *name, query_results_t nsRes, query_results_t *res) 
         strcat(newName, "::");
         strcat(newName, currRes.name);
 
-        if (strcmp(newName, "std::mutex::lock") == 0)  {
-            printf("FOUND LOCK!\n");
-        }
-
         currRes.name = newName;
 
         if (!add_result(res, currRes)) {

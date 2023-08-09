@@ -21,6 +21,13 @@ typedef struct module_debug_info {
     int sizeSources, capacitySources;
 } module_debug_info_t;
 
+typedef struct ns_info {
+    char *buf;
+    int capacity;
+    bool firstFunc;
+    size_t entry;
+} ns_info_t;
+
 /**
  * Callback when enumerating over lines in a module for writing a new line to
  * the module's debugging information
@@ -63,8 +70,26 @@ static source_debug_info_t *find_source(module_debug_info_t *info, const char *p
 
 /**
  * Writes a line for the given module to the output file
+ *
+ * Returns: Whether successful
  */
-static void write_module_debug_json(debug_file_t *file, module_debug_info_t info);
+static bool write_module_debug_json(debug_file_t *file,
+                                    module_debug_t *fullInfo,
+                                    module_debug_info_t info);
+
+/**
+ * Writes function information to the output file for some module
+ *
+ * Returns: Whether successful
+ */
+static bool write_funcs(debug_file_t *file, module_debug_t *info);
+
+/**
+ * Uses a depth-first search over namespaces to write function names
+ *
+ * Returns: Whether successful
+ */
+static bool write_funcs_dfs(debug_file_t *file, module_debug_t *info, ns_info_t *ns);
 
 bool open_debug_file(const char *path, debug_file_t *file) {
     PRINT_DEBUG("Enter open debug file");
@@ -95,10 +120,10 @@ void close_debug_file(debug_file_t file) {
     PRINT_DEBUG("Exit close debug file");
 }
 
-bool write_module_debug_info(debug_file_t *file, const char *modulePath) {
+bool write_module_debug_info(debug_file_t *file, module_debug_t *info) {
     PRINT_DEBUG("Enter write module debug info");
 
-    if (drsym_module_has_symbols(modulePath) != DRSYM_SUCCESS) {
+    if (drsym_module_has_symbols(info->path) != DRSYM_SUCCESS) {
         PRINT_DEBUG("Exit early write module debug info");
         return true;
     }
@@ -108,9 +133,9 @@ bool write_module_debug_info(debug_file_t *file, const char *modulePath) {
         PRINT_ERROR("Could not initialise module debug info");
         return false;
     }
-    debugInfo.path = modulePath;
+    debugInfo.path = info->path;
     
-    drsym_error_t err = drsym_enumerate_lines(modulePath,
+    drsym_error_t err = drsym_enumerate_lines(info->path,
                                               (drsym_enumerate_lines_cb)save_line,
                                               &debugInfo);
 
@@ -119,11 +144,11 @@ bool write_module_debug_info(debug_file_t *file, const char *modulePath) {
         return true;
     }
     
-    write_module_debug_json(file, debugInfo);
+    bool success = write_module_debug_json(file, info, debugInfo);
     deinit_module_debug_info(debugInfo);
 
     PRINT_DEBUG("Exit write module debug info");
-    return true;
+    return success;
 }
 
 static bool save_line(drsym_line_info_t *line, module_debug_info_t *module) {
@@ -179,6 +204,7 @@ static bool init_module_debug_info(module_debug_info_t *info) {
     info->success = true;
     info->sizeSources = 0;
     info->capacitySources = MIN_CAPACITY;
+    return true;
 }
 
 static void deinit_module_debug_info(module_debug_info_t info) {
@@ -248,9 +274,12 @@ static source_debug_info_t *find_source(module_debug_info_t *info, const char *p
     return source;
 }
 
-static void write_module_debug_json(debug_file_t *file, module_debug_info_t info) {
+static bool write_module_debug_json(debug_file_t *file,
+                                    module_debug_t *fullInfo,
+                                    module_debug_info_t info)
+{
     if (info.sizeSources == 0) {
-        return;
+        return true;
     }
 
     if (!file->firstLine) {
@@ -278,5 +307,103 @@ static void write_module_debug_json(debug_file_t *file, module_debug_info_t info
         fprintf(file->file, " ] }");
     }
 
-    fprintf(file->file, " ] }");
+    fprintf(file->file, " ], \"funcs\": ");
+
+    if (!write_funcs(file, fullInfo)) {
+        return false;
+    }
+
+    fprintf(file->file, " }");
+    
+    return true;
+}
+
+static bool write_funcs(debug_file_t *file, module_debug_t *info) {
+    fprintf(file->file, "[ ");
+
+    ns_info_t ns;
+    ns.buf = malloc(MIN_CAPACITY * sizeof(ns.buf[0]));
+    if (ns.buf == NULL) {
+        PRINT_ERROR("Could not allocate initial space for namespace string buffer");
+        return false;
+    }
+    ns.capacity = MIN_CAPACITY;
+    ns.firstFunc = true;
+
+    for (int i = 0; i < info->sizeRoots; i++) {
+        ns.buf[0] = '\0';
+        ns.entry = info->roots[i];
+
+        if (!write_funcs_dfs(file, info, &ns)) {
+            return false;
+        }
+    }
+
+    fprintf(file->file, " ]");
+
+    return true;
+}
+
+static bool write_funcs_dfs(debug_file_t *file, module_debug_t *info, ns_info_t *ns) {
+    entry_t entry = info->entries[ns->entry];
+
+    switch (entry.tag) {
+    case DW_TAG_subprogram:
+        if (!entry.hasLowPC || !entry.hasHighPC || entry.name == NULL) {
+            return true;
+        }
+
+        if (!ns->firstFunc) {
+            fprintf(file->file, ", ");
+        }
+        ns->firstFunc = false;
+
+        fprintf(file->file, "{ \"name\": \"");
+
+        if (strlen(ns->buf) == 0) {
+            fprintf(file->file, "%s", entry.name);
+        } else {
+            fprintf(file->file, "%s::%s", ns->buf, entry.name);
+        }
+
+        fprintf(file->file,
+                "\", \"lowpc\": \"%p\", \"highpc\": \"%p\" }",
+                info->start + (size_t)entry.lowPC,
+                info->start + (size_t)entry.highPC);
+        break;
+
+    case DW_TAG_namespace:
+    case DW_TAG_class_type:
+    case DW_TAG_structure_type:
+        char *currName = entry.name == NULL ? "<NULL>" : entry.name;
+        size_t minCapacity = strlen(ns->buf) + strlen(currName) + 3;
+
+        if (ns->capacity < minCapacity) {
+            ns->capacity *= 2;
+            ns->buf = reallocarray(ns->buf, ns->capacity, sizeof(ns->buf[0]));
+            if (ns->buf == NULL) {
+                PRINT_ERROR("Could not allocate further space for namespace name buffer");
+                return false;
+            }
+        }
+
+        strcat(ns->buf, "::");
+        strcat(ns->buf, currName);
+
+    case DW_TAG_compile_unit:
+        size_t currNameLen = strlen(ns->buf);
+        for (int i = 0; i < entry.sizeChildren; i++) {
+            ns->buf[currNameLen] = '\0';
+            ns->entry = entry.children[i];
+            if (!write_funcs_dfs(file, info,  ns)) {
+                return false;
+            }
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    return true;
 }

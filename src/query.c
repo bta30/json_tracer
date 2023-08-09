@@ -34,6 +34,8 @@ bool query_addr(void *addr, void *pc, void *bp, query_results_t *results) {
     
     module_debug_t info;
     if (!find_module(pc, &info)) {
+        *results = blank_query_results();
+        PRINT_DEBUG("Early exit query address");
         return true;
     }
 

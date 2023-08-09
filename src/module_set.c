@@ -142,8 +142,7 @@ static bool add_module(module_debug_t info) {
     moduleSet.info[moduleSet.infoSize++] = info;
 
     bool success = moduleSet.debugFilePath == NULL ||
-                   write_module_debug_info(&moduleSet.debugFile,
-                                           (const char *)info.path);
+                   write_module_debug_info(&moduleSet.debugFile, &info);
 
     dr_mutex_unlock(moduleSet.mutex);
     return success;

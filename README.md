@@ -198,6 +198,11 @@ information, containing fields:
   - `sourceFiles` - an array of records representing each source file in the module, containing fields:
     - `path` - the path to the source file
     - `lines` - an array of unique integers representing the useful/executable lines in that source file
+  - `funcs` - an array of records representing each function belonging to the module with debugging information, containig fields:
+    - `name` - a string of the name of the function
+    - `lowpc` - a string of the hexadecimal lowest program counter of the function in this trace (inclusive)
+    - `highpc` - a string of the hexadecimnal of this highest program counter of the function in this trace (exclusive)
+    - `path` - a string containing the path of the source file where this function is defined
 
 ## Scripts
 This client comes with some scripts with some Python scripts for performing
@@ -229,7 +234,7 @@ It returns output of one line for each global variable with a list of each
 possible mutex. For example, if global variable `a` is locked with lock `b`,
 then there will be line `a, ['b']`, or this list may contain other locks.
 
-### File coverage
+### File Coverage
 This script, `file_coverage.py`, gets the code coverage, given a trace,
 extra debugging information (use `--output_debug_info` for this) and the paths
 to some source files. It outputs the coverage information (number of useful
@@ -239,3 +244,17 @@ of each file and then overall.
 For example, to run this on trace `trace.0000.log` with extra debugging
 information `debug.js` on source files `main.c` and `main2.c`, run:
 ```python scripts/file_coverage.py trace.0000.log debug.js main.c main2.c```
+
+### Program Load
+This script, `program_load.py`, gets the load of a trace - that is, the
+number of instructions spent inside the bodies of functions, and the number
+of times variables are accessed (global variables or different instances of
+local variables). It takes in an input of the path to a trace file and extra
+trace debugging information, then outputs the load of functions in
+decreasing order (with function name, then number of instructions in that 
+unction's body executed), followed by the load of different variables (their
+names, then the number of times they were accessed).
+
+For example, to run this on trace `trace.0000.log` with extra debugging
+information in `debug.js`, run:
+```python scripts/program_load.py trace.0000.log debug.js```
