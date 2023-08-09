@@ -45,6 +45,13 @@ interleaved output in a file `ls_trace.xxxx.log`, run:
 
 ```./run.sh --output_interleaved --output_prefix ls_trace -- ls -a```
 
+There is also an option to output extra debugging information to a separate
+JSON file. To do this, use option `--output_debug_info [PATH]`. For example,
+to trace `ls -a` with interleaved output and send extra debugging information
+to `debug_info.js`, run:
+
+```./run.sh --output_interleaved --output_debug_info debug_info.js -- ls -a```
+
 ### Filtering Options
 Other options may be used for filtering which entries to output in the trace.
 These allow us to include or exclude any entries corresponding to code in
@@ -87,7 +94,7 @@ to source files `src/main.c` and `src/file.c` when generating a trace of `progna
 
 ```./run.sh --exclude --module --all --include --module build/module.so --exclude --file src/main.c -- file src/file.c -- progname args```
 
-## JSON Output Format
+## Trace JSON Output Format
 The output of the trace is an array of records corresponding to one instruction
 executed each, in order of execution. These records contain the following fields:
   - `time`   - a string of the real-world time this instruction was executed
@@ -180,6 +187,18 @@ If the `type` is `variable` then the following fields will also be present:
     
     For example, a volatile pointer to a constant integer may correspond to `valueType`: `{ "name": "int",  "compound": [ "const", "pointer", "volatile" ] }`
 
+## Debugging Information Trace Format
+Extra debugging information may be output to a separate file. This specifically
+contains information on source files in the execution of the trace for which
+debugging information is available.
+
+The output is an array of records representing each module with debugging
+information, containing fields:
+  - `path`  - a string containing the path to the module
+  - `sourceFiles` - an array of records representing each source file in the module, containing fields:
+    - `path` - the path to the source file
+    - `lines` - an array of unique integers representing the useful/executable lines in that source file
+
 ## Scripts
 This client comes with some scripts with some Python scripts for performing
 simple analyses on traces. These are found in the `scripts/` directory.
@@ -209,3 +228,14 @@ only global variables for which debugging information is found.
 It returns output of one line for each global variable with a list of each
 possible mutex. For example, if global variable `a` is locked with lock `b`,
 then there will be line `a, ['b']`, or this list may contain other locks.
+
+### File coverage
+This script, `file_coverage.py`, gets the code coverage, given a trace,
+extra debugging information (use `--output_debug_info` for this) and the paths
+to some source files. It outputs the coverage information (number of useful
+lines, number of useful lines covered and percentage of useful lines covered)
+of each file and then overall.
+
+For example, to run this on trace `trace.0000.log` with extra debugging
+information `debug.js` on source files `main.c` and `main2.c`, run:
+```python scripts/file_coverage.py trace.0000.log debug.js main.c main2.c```

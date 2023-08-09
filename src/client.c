@@ -47,7 +47,6 @@ DR_EXPORT void dr_client_main(client_id_t id, int argc, const char **argv) {
     dr_set_client_name("JSON Tracer", "https://github.com/bta30/json_tracer");
 
     bool successful = exts_init() && register_callbacks()
-                                  && init_module_set()
                                   && process_args(argc, argv);
     if (!successful) {
         EXIT_FAIL();
@@ -57,8 +56,7 @@ DR_EXPORT void dr_client_main(client_id_t id, int argc, const char **argv) {
 }
 
 static void client_deinit(void) {
-    bool successful = deinit_args() && deinit_module_set()
-                                    && unregister_callbacks()
+    bool successful = deinit_args() && unregister_callbacks()
                                     && exts_deinit();
     if (!successful) {
         EXIT_FAIL();

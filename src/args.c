@@ -5,6 +5,7 @@
 
 #include "filter.h"
 #include "instr_vals_buffer.h"
+#include "module_set.h"
 #include "error.h"
 
 typedef enum arg_type {
@@ -16,6 +17,7 @@ typedef enum arg_type {
     argInterleaved,
     argSeparate,
     argPrefix,
+    argDebugInfo,
     argHelp
 } arg_type_t;
 
@@ -28,6 +30,7 @@ static const struct option opts[] = {
     (struct option) { "output_interleaved", 0, NULL, argInterleaved },
     (struct option) { "output_separate",    0, NULL, argSeparate },
     (struct option) { "output_prefix",      1, NULL, argPrefix },
+    (struct option) { "output_debug_info",  1, NULL, argDebugInfo },
     (struct option) { "help",               0, NULL, argHelp },
     (struct option) { 0,                    0, 0,    0   }
 };
@@ -37,7 +40,7 @@ static const struct option opts[] = {
  *
  * Returns: Whether successful
  */
-static bool process_opt(int opt, vals_buf_opts_t *outputOpts);
+static bool process_opt(int opt, vals_buf_opts_t *outputOpts, const char **debugPath);
 
 /**
  * Prints the help message
@@ -67,8 +70,9 @@ bool process_args(int argc, const char **argv) {
 
     int opt;
     vals_buf_opts_t outputOpts = { false, false, NULL };
+    const char *debugPath = NULL;
     while ((opt = getopt_long(argc, nonConstArgv, "", opts, NULL)) != -1) {
-        if (!process_opt(opt, &outputOpts)) {
+        if (!process_opt(opt, &outputOpts, &debugPath)) {
             free(nonConstArgv);
             return false;
         }
@@ -80,7 +84,7 @@ bool process_args(int argc, const char **argv) {
         outputOpts.prefix = "trace";
     }
 
-    if (!init_vals_buf(outputOpts)) {
+    if (!init_module_set(debugPath) || !init_vals_buf(outputOpts)) {
         return false;
     }
 
@@ -91,7 +95,7 @@ bool process_args(int argc, const char **argv) {
 bool deinit_args(void) {
     PRINT_DEBUG("Enter deinit args");
 
-    if (!deinit_vals_buf() || !deinit_filter()) {
+    if (!deinit_vals_buf() || !deinit_module_set() || !deinit_filter()) {
         return false;
     }
 
@@ -99,7 +103,7 @@ bool deinit_args(void) {
     return true;
 }
 
-static bool process_opt(int opt, vals_buf_opts_t *outputOpts) {
+static bool process_opt(int opt, vals_buf_opts_t *outputOpts, const char **debugPath) {
     static bool include = true;
     switch (opt) {
         case argInclude:
@@ -125,6 +129,10 @@ static bool process_opt(int opt, vals_buf_opts_t *outputOpts) {
 
         case argPrefix:
             outputOpts->prefix = optarg;
+            return true;
+
+        case argDebugInfo:
+            *debugPath = optarg;
             return true;
 
         case argHelp:
@@ -163,6 +171,8 @@ static void print_help(void) {
             "Outputs separate JSON files for entries from each thread\n"
             "   --output_prefix [PREFIX]                "
             "Sets the prefix for the output of the trace\n"
+            "   --output_debug_info [PATH]              "
+            "Outputs extra debugging information from the trace\n"
             "   --help                                  "
             "Prints this help message\n"
             "\n"

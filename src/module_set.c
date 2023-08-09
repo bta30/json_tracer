@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "extra_debug_info.h"
 #include "error.h"
 
 #define MIN_CAPACITY 4
@@ -9,6 +10,8 @@
 struct {
     module_debug_t *info;
     int infoSize, infoCapacity;
+    debug_file_t debugFile;
+    const char *debugFilePath;
 
     void *mutex;
 } moduleSet;
@@ -25,7 +28,7 @@ static bool add_module(module_debug_t info);
  */
 static bool should_get_info(const module_data_t *info);
 
-bool init_module_set(void) {
+bool init_module_set(const char *debugFilePath) {
     PRINT_DEBUG("Enter init module set");
 
     moduleSet.mutex = dr_mutex_create();
@@ -37,17 +40,25 @@ bool init_module_set(void) {
     moduleSet.info = malloc(MIN_CAPACITY * sizeof(moduleSet.info[0]));
     moduleSet.infoSize = 0;
     moduleSet.infoCapacity = MIN_CAPACITY;
+    moduleSet.debugFilePath = debugFilePath;
     if (moduleSet.info == NULL) {
         PRINT_ERROR("Could not allocate space for module set information");
         return false;
     }
 
+    bool success = debugFilePath == NULL ||
+                   open_debug_file(debugFilePath, &moduleSet.debugFile);
+
     PRINT_DEBUG("Exit init module set");
-    return true;
+    return success;
 }
 
 bool deinit_module_set(void) {
     PRINT_DEBUG("Enter deinit module set");
+
+    if (moduleSet.debugFilePath != NULL) {
+        close_debug_file(moduleSet.debugFile);
+    }
     
     if (moduleSet.mutex != NULL) {
         dr_mutex_destroy(moduleSet.mutex);
@@ -123,13 +134,19 @@ static bool add_module(module_debug_t info) {
                                       sizeof(moduleSet.info[0]));
         if (moduleSet.info == NULL) {
             PRINT_ERROR("Could not allocate space for new module");
+            dr_mutex_unlock(moduleSet.mutex);
             return false;
         }
     }
 
     moduleSet.info[moduleSet.infoSize++] = info;
 
+    bool success = moduleSet.debugFilePath == NULL ||
+                   write_module_debug_info(&moduleSet.debugFile,
+                                           (const char *)info.path);
+
     dr_mutex_unlock(moduleSet.mutex);
+    return success;
 }
 
 static bool should_get_info(const module_data_t *info) {

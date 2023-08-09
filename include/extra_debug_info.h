@@ -1,0 +1,32 @@
+#ifndef EXTRA_DEBUG_INFO_H
+#define EXTRA_DEBUG_INFO_H
+
+#include <stdio.h>
+
+#include "dr_api.h"
+
+typedef struct debug_file {
+    FILE *file;
+    bool firstLine;
+} debug_file_t;
+
+/**
+ * Opens a new file for writing extra debug information
+ *
+ * Returns: Whether successful
+ */
+bool open_debug_file(const char *path, debug_file_t *file);
+
+/**
+ * Closes an open debug_file_t
+ */
+void close_debug_file(debug_file_t file);
+
+/**
+ * Writes information to a debug_file_t given a module's path
+ *
+ * Returns: Whether successful
+ */
+bool write_module_debug_info(debug_file_t *file, const char *path);
+
+#endif

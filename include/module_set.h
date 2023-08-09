@@ -6,11 +6,12 @@
 #include "module_debug_info.h"
 
 /**
- * Initialises the stored module set
+ * Initialises the stored module set, given a path to store extra module debug
+ * information (or NULL if not to use)
  *
  * Returns: Whether successful
  */
-bool init_module_set(void);
+bool init_module_set(const char *debugFilePath);
 
 /**
  * Deinitialises the stored module set
