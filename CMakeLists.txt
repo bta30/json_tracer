@@ -18,6 +18,7 @@ set(SRCS
     ${CMAKE_SOURCE_DIR}/src/trace_entry.c
     ${CMAKE_SOURCE_DIR}/src/trace_information.c
     ${CMAKE_SOURCE_DIR}/src/extra_debug_info.c
+    ${CMAKE_SOURCE_DIR}/src/address_lookup.c
 )    
      
 set(EXTS drmgr drx drsyms)

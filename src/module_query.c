@@ -289,6 +289,7 @@ static bool type_query(query_info_t info, size_t entryIndex, type_t *type) {
             case DW_TAG_base_type:
             case DW_TAG_typedef:
             case DW_TAG_union_type:
+            case DW_TAG_structure_type:
             case DW_TAG_class_type:
             case DW_TAG_interface_type:
             case DW_TAG_enumeration_type:
@@ -320,6 +321,7 @@ static bool type_query(query_info_t info, size_t entryIndex, type_t *type) {
                 break;
 
             default:
+                PRINT_ERROR(entry->name);
                 PRINT_ERROR("Could not determine type in type query");
                 return false;
         }

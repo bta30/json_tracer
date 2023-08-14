@@ -144,7 +144,8 @@ bool write_module_debug_info(debug_file_t *file, module_debug_t *info) {
         return true;
     }
     
-    bool success = write_module_debug_json(file, info, debugInfo);
+    bool success = write_module_debug_json(file, info, debugInfo) &&
+                   drsym_free_resources(info->path) == DRSYM_SUCCESS;
     deinit_module_debug_info(debugInfo);
 
     PRINT_DEBUG("Exit write module debug info");
@@ -158,7 +159,7 @@ static bool save_line(drsym_line_info_t *line, module_debug_info_t *module) {
         PRINT_DEBUG("Exit save line early");
         return true;
     }
-    
+
     source_debug_info_t *source = find_source(module, line->file);
     if (source == NULL) {
         module->success = false;

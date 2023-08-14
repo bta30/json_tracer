@@ -122,10 +122,12 @@ dr_emit_flags_t insert_instrumentation(void *drcontext, void *tag,
     PRINT_DEBUG("Entered insert instrumentation");
 
     if (!instr_is_app(instr)) {
+        PRINT_DEBUG("Exited insert instrumentation from not app");
         return DR_EMIT_DEFAULT;
     }
 
     if (!filter_include_instr(instr)) {
+        PRINT_DEBUG("Exited insert instrumentation from filter");
         return DR_EMIT_DEFAULT;
     }
 

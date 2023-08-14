@@ -68,7 +68,7 @@ query_results_t blank_query_results(void);
  *
  * Returns: Whether successful
  */
-bool query_line(void *pc, char **file, uint64_t *line);
+bool query_line(void *pc, char **file, uint64_t *line, bool persistent);
 
 /**
  * Gets module and source file information for an instruction

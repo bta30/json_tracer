@@ -9,6 +9,7 @@ libdwarfDir="libdwarf-${libdwarfVersion}"
 libdwarfURL="https://github.com/davea42/libdwarf-code/releases/download/v${libdwarfVersion}/${libdwarfDir}.tar.xz"
 
 minUnitURL="https://raw.githubusercontent.com/siu/minunit/master/minunit.h"
+splash3Repo="https://github.com/SakalisC/Splash-3"
 
 drrun="external/${dynamorioDir}/bin64/drrun"
 client="build/libjsontracer.so"

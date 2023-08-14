@@ -4,6 +4,7 @@
 #include "instr_vals_buffer.h"
 #include "json_generation.h"
 #include "query.h"
+#include "address_lookup.h"
 #include "error.h"
 
 /**
@@ -61,27 +62,32 @@ static bool get_opnd_debug_info(opnd_info_t *info, void *pcAddr, void *bp);
 
 bool flush_vals_buffer(vals_buf_t *buf) {
     PRINT_DEBUG("Entered flush values buffer");
+    init_lookup();
 
     while (buf->size > 0) {
         instrument_vals_t vals;
         if (!entry_dequeue(buf, &vals)) {
+            deinit_lookup();
             PRINT_ERROR("Unable to dequeue entry to flush buffer");
             return false;
         }
 
         trace_entry_t entry;
         if(!get_entry_info(vals, &entry)) {
+            deinit_lookup();
             PRINT_ERROR("Unable to get entry information");
             return false;
         }
 
         json_file_t *file = &buf->file;
         if (!add_json_entry(file, entry)) {
+            deinit_lookup();
             PRINT_ERROR("Unable to add JSON entry to flush buffer");
             return false;
         }
     }
 
+    deinit_lookup();
     PRINT_DEBUG("Exited flush values buffer");
     return true;
 }
@@ -90,7 +96,7 @@ static bool get_entry_info(instrument_vals_t vals, trace_entry_t *entry) {
     entry->tid = vals.tid;
     entry->pc = vals.pc;
 
-    if (!query_line(entry->pc, &entry->file, &entry->line)) {
+    if (!query_line(entry->pc, &entry->file, &entry->line, true)) {
         PRINT_ERROR("Error when querying line in get entry info");
         return false;
     }

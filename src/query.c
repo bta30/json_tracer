@@ -7,6 +7,7 @@
 
 #include "module_debug_info.h"
 #include "module_set.h"
+#include "address_lookup.h"
 #include "error.h"
 
 /**
@@ -20,14 +21,6 @@ static drsym_info_t get_blank_info(void);
  * Returns: Whether successful
  */
 static bool alloc_info_strs(drsym_info_t *info);
-
-/**
- * Attempts to get the line information, indicating if a bigger file buffer or
- * name buffer is needed
- *
- * Returns: Whether to retry with bigger buffers
- */
-static bool get_addr_info(char *path, size_t offset, drsym_info_t *info);
 
 bool query_addr(void *addr, void *pc, void *bp, query_results_t *results) {
     PRINT_DEBUG("Enter query address");
@@ -83,7 +76,7 @@ query_results_t blank_query_results(void) {
     return results;
 }
 
-bool query_line(void *pc, char **file, uint64_t *line) {
+bool query_line(void *pc, char **file, uint64_t *line, bool persistent) {
     PRINT_DEBUG("Enter query line");
 
     *file = NULL;
@@ -101,15 +94,20 @@ bool query_line(void *pc, char **file, uint64_t *line) {
     bool retry;
     do {
         retry = alloc_info_strs(&lineInfo) &&
-                get_addr_info(module->full_path, offset, &lineInfo);
+                lookup_address(pc, &lineInfo, persistent);
     } while (retry);
-
-    *file = lineInfo.file;
-    *line = lineInfo.line;
 
     if (lineInfo.name != NULL) {
         free(lineInfo.name);
     }
+
+    if (lineInfo.file_available_size == 0) {
+        free(lineInfo.file);
+        lineInfo.file = NULL;
+    }
+
+    *file = lineInfo.file;
+    *line = lineInfo.line;
 
     dr_free_module_data(module);
 
@@ -129,7 +127,7 @@ bool query_file(void *pc, char *modulePath, char *sourcePath, int bufSize) {
 
     char *src;
     uint64_t line;
-    bool success = query_line(pc, &src, &line);
+    bool success = query_line(pc, &src, &line, false);
     if (!success) {
         return false;
     }
@@ -161,14 +159,14 @@ bool query_function(void *pc, char **functionName) {
     bool retry ;
     do {
         retry = alloc_info_strs(&funcInfo) &&
-                get_addr_info(module->full_path, offset, &funcInfo);
+                lookup_address(pc, &funcInfo, false);
     } while (retry);
     
-    *functionName = funcInfo.name;
-
     if (funcInfo.file != NULL) {
         free(funcInfo.file);
     }
+
+    *functionName = funcInfo.name;
 
     dr_free_module_data(module);
 
@@ -189,11 +187,11 @@ static drsym_info_t get_blank_info(void) {
 
 static bool alloc_info_strs(drsym_info_t *info) {
     if (info->file_size == 0) {
-        info->file_size = 32 * sizeof(info->file[0]);
+        info->file_size = 256 * sizeof(info->file[0]);
     }
 
     if (info->name_size == 0) {
-        info->name_size = 32 * sizeof(info->name[0]);
+        info->name_size = 256 * sizeof(info->name[0]);
     }
 
     info->file_size *= 2;
@@ -213,23 +211,6 @@ static bool alloc_info_strs(drsym_info_t *info) {
     }
 
     return info->file != NULL && info->name != NULL;
-}
-
-static bool get_addr_info(char *path, size_t offset, drsym_info_t *info) {
-    drsym_error_t err = drsym_lookup_address(path, offset, info,
-                                             DRSYM_DEFAULT_FLAGS);
-
-    if (err != DRSYM_SUCCESS) {
-        free(info->file);
-        free(info->name);
-        info->file = NULL;
-        info->line = 0;
-        info->name = NULL;
-        return false;
-    }
-
-    return info->file_size == info->file_available_size + 1 ||
-           info->name_size == info->name_available_size + 1;
 }
 
 const char *get_type_compound_name(type_compound_t compound) {
