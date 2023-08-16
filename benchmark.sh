@@ -49,9 +49,11 @@ function timeBenchmark {
     echo ""
 }
 
-function doBenchmarks {
+function doSumBenchmarks {
     timeBenchmark "bin/sum" "2 test/sum/tables/*" "/dev/null" "sum"
-    
+}
+
+function doSplash3Benchmarks {
     timeBenchmark "benchmark_programs/Splash-3/codes/apps/barnes/BARNES" "" "benchmark_programs/Splash-3/codes/apps/barnes/inputs/n16384-p1" "Splash-3_Barnes_1"
     timeBenchmark "benchmark_programs/Splash-3/codes/apps/barnes/BARNES" "" "benchmark_programs/Splash-3/codes/apps/barnes/inputs/n16384-p16" "Splash-3_Barnes_16"
     timeBenchmark "benchmark_programs/Splash-3/codes/apps/barnes/BARNES" "" "benchmark_programs/Splash-3/codes/apps/barnes/inputs/n16384-p256" "Splash-3_Barnes_256"
@@ -91,6 +93,11 @@ function doBenchmarks {
     timeBenchmark "benchmark_programs/Splash-3/codes/kernels/radix/RADIX" "-p1 -n1048576" "/dev/null" "Splash-3_Radix_1"
     timeBenchmark "benchmark_programs/Splash-3/codes/kernels/radix/RADIX" "-p4 -n1048576" "/dev/null" "Splash-3_Radix_4"
     timeBenchmark "benchmark_programs/Splash-3/codes/kernels/radix/RADIX" "-p64 -n1048576" "/dev/null" "Splash-3_Radix_64"
+}
+
+function doBenchmarks {
+    doSumBenchmarks
+    doSplash3Benchmarks
 }
 
 cd $(dirname $0)

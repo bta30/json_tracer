@@ -5,6 +5,7 @@
 
 typedef struct filter_entry {
     bool include;  // True for include, false for exclude
+    bool matchNot; // True for match all except option, false for match option
 
     enum {
         module,

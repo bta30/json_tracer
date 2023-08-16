@@ -105,6 +105,7 @@ bool deinit_args(void) {
 
 static bool process_opt(int opt, vals_buf_opts_t *outputOpts, const char **debugPath) {
     static bool include = true;
+
     switch (opt) {
         case argInclude:
             include = true;
@@ -118,7 +119,7 @@ static bool process_opt(int opt, vals_buf_opts_t *outputOpts, const char **debug
         case argFile:
         case argInstruction:
             return add_filter_arg_entry(include, opt);
-        
+
         case argInterleaved:
             outputOpts->interleaved = true;
             return true;
@@ -155,25 +156,25 @@ static void print_help(void) {
            "information.\n"
            "\n"
            "Options:\n"
-            "   --include                               "
+            "   --include                                                           "
             "Sets all following options to include what is specified\n"
-            "   --exclude                               "
+            "   --exclude                                                           "
             "Sets all following options to exclude what is specified\n"
-            "   --module [PATH] | --module --all        "
+            "   --module [PATH] | --module -N[PATH] | --module --all            "
             "Specifies a module to filter, or any module\n"
-            "   --file  [PATH]  | --file --all          "
+            "   --file  [PATH]  | --file -N[PATH] | --file --all                "
             "Specifies a source file to filter, or any source file\n"
-            "   --instr [OPCODE NAME] | --instr --all   "
+            "   --instr [OPCODE NAME] | --instr -N[OPCODE NAME] | --instr --all "
             "Specifies an instruction to filter, or any instruction\n"
-            "   --output_interleaved                    "
+            "   --output_interleaved                                                "
             "Outputs a JSON file with interleaved entries from all threads\n"
-            "   --output_separated                      "
+            "   --output_separated                                                  "
             "Outputs separate JSON files for entries from each thread\n"
-            "   --output_prefix [PREFIX]                "
+            "   --output_prefix [PREFIX]                                            "
             "Sets the prefix for the output of the trace\n"
-            "   --output_debug_info [PATH]              "
+            "   --output_debug_info [PATH]                                          "
             "Outputs extra debugging information from the trace\n"
-            "   --help                                  "
+            "   --help                                                              "
             "Prints this help message\n"
             "\n"
             "Note: By default, the client works as if starting with arguments: "
@@ -183,8 +184,21 @@ static void print_help(void) {
 static bool add_filter_arg_entry(bool include, arg_type_t argType) {
     filter_entry_t entry;
     entry.include = include;
-    entry.value = strcmp(optarg, "--all") == 0 ? NULL : realpath(optarg, NULL);
+    entry.matchNot = optarg[0] == '-' && optarg[1] == 'N';
 
+    if (strcmp(optarg, "--all") == 0) {
+        entry.value = NULL;
+    } else {
+        const char *arg = optarg + (entry.matchNot ? 2 : 0);
+
+        if (argType == argInstruction) {
+            entry.value = malloc(sizeof(arg[0]) * (strlen(arg) + 1));
+            strcpy(entry.value, arg);
+        } else {
+            entry.value = realpath(arg, NULL);
+        }
+    }
+    
     entry.type = argType == argModule ? module :
                  argType == argFile ? file :
                  argType == argInstruction ? instruction :

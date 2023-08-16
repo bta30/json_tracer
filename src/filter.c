@@ -100,7 +100,7 @@ bool filter_include_instr(instr_t *instr) {
                             (entry.value == NULL ||
                             strcmp(entry.value, opcodeName) == 0));
 
-        if (applyEntry) {
+        if (applyEntry != entry.matchNot) {
             include = entry.include;
             break;
         }

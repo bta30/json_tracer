@@ -94,6 +94,19 @@ to source files `src/main.c` and `src/file.c` when generating a trace of `progna
 
 ```./run.sh --exclude --module --all --include --module build/module.so --exclude --file src/main.c -- file src/file.c -- progname args```
 
+We can also use `-N` to match anything except for a given option. For example,
+we can use ``--include --instr -Nmov` to include all instructions except `mov`.
+Importantly, this does not specifically exclude the given option (e.g. `--include
+--instr -Nmov --instr mov` does include `mov` and is equivalent to `--include
+--instr all`, whereas `--exclude --instr mov --include --instr -Nmov` and
+`--include --instr -Nmov --exclude --instr mov` exclude `mov` but include all
+other instructions). Note that `-N` works with `--module`, `--file` and `--instr`.
+
+For example, to include entries in module `build/module.so` that are a `mov` instruction,
+when generating a trace of `progname args`, run:
+
+```./run.sh --exclude --module --all --include --module build/module.so --exclude --instr -Nmov -- progname args```
+
 ## Trace JSON Output Format
 The output of the trace is an array of records corresponding to one instruction
 executed each, in order of execution. These records contain the following fields:
