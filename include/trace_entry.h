@@ -139,6 +139,6 @@ const char *mem_ref_type_to_str(mem_ref_type_t memRefType);
  */
 const char *bool_to_str(bool b);
 
-#define BUF_LEN 4096
+#define BUF_LEN (1 << 16)
 
 #endif

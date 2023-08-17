@@ -27,6 +27,8 @@ function timeCommand {
 
 # Given: executable arguments stdinfile name
 function timeBenchmark {
+    rm -f *.log
+
     echo -e "Benchmark $4:"
 
     outputPrefix="$4"
@@ -35,16 +37,26 @@ function timeBenchmark {
     echo "Normal time: $timeNormal ms"
 
     timeExcludeAll=$(timeCommand "./run.sh --output_interleaved --output_prefix $outputPrefix --exclude --module --all -- $1 $2" $3)  
-    excludeAllFactor=$(echo "$timeExcludeAll/$timeNormal" | bc -l)
-    echo "Time exclude all: $timeExcludeAll ms, $excludeAllFactor times slower than normal"
+    excludeAllFactor=$(echo "scale=3; $timeExcludeAll/$timeNormal" | bc -l)
+    excludeAllTraceName="$outputPrefix.0000.log"
+    excludeAllTraceSize=$(du -sm $excludeAllTraceName | awk '{print $1}')
+    excludeAllWriteSpeed=$(echo "scale=3; $excludeAllTraceSize/($timeExcludeAll/1000)" | bc -l)
+    echo "Time exclude all: $timeExcludeAll ms, $excludeAllFactor times slower than normal, writing at speed $excludeAllWriteSpeed MB/s"
 
-    timeIncludeMainModule=$(timeCommand "./run.sh --output_interleaved --output_prefix $outputPrefix --exclude --module --all --include --module $1 -- $1 $2" $3)
-    includeMainModuleFactor=$(echo "$timeIncludeMainModule/$timeNormal" | bc -l)
-    echo "Time include only main module: $timeIncludeMainModule ms, $includeMainModuleFactor times slower than normal"
+    timeIncludeMainModule=$(timeCommand "./run.sh --output_interleaved --output_prefix $outputPrefix --exclude --module --all --include --module $1 --exclude --instr -Ncall -- $1 $2" $3)
+    includeMainModuleFactor=$(echo "scale=3; $timeIncludeMainModule/$timeNormal" | bc -l)
+    includeMainModuleTraceName="$outputPrefix.0001.log"
+    includeMainModuleTraceSize=$(du -sm $includeMainModuleTraceName | awk '{print $1}')
+    includeMainModuleWriteSpeed=$(echo "scale=3; $includeMainModuleTraceSize/($timeIncludeMainModule/1000)" | bc -l)
+    echo "Time include only main module (only call instructions) : $timeIncludeMainModule ms, $includeMainModuleFactor times slower than normal, writing at speed $includeMainModuleWriteSpeed MB/s"
 
-    timeIncludeAll=$(timeCommand "./run.sh --output_interleaved --output_prefix $outputPrefix -- $1 $2" $3)
-    includeAllFactor=$(echo "$timeIncludeAll/$timeNormal" | bc -l)
-    echo "Time include all: $timeIncludeAll ms, $includeAllFactor times slower than normal"
+    timeIncludeAll=$(timeCommand "./run.sh --output_interleaved --output_prefix $outputPrefix --exclude --instr -Ncall -- $1 $2" $3)
+    includeAllFactor=$(echo "scale=3; $timeIncludeAll/$timeNormal" | bc -l)
+    includeAllTraceName="$outputPrefix.0002.log"
+    includeAllTraceSize=$(du -sm $includeAllTraceName | awk '{print $1}')
+    echo $includeAllTraceSize MB $timeIncludeAll/1000 s
+    includeAllWriteSpeed=$(echo "scale=3; $includeAllTraceSize/($timeIncludeAll/1000)" | bc -l)
+    echo "Time include all modules (only call instructions): $timeIncludeAll ms, $includeAllFactor times slower than normal, writing at speed $includeAllWriteSpeed MB/s"
 
     echo ""
 }

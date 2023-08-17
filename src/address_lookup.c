@@ -41,6 +41,7 @@ static bool save_entry(void *entry, drsym_info_t *info);
 
 bool lookup_address(void *addr, drsym_info_t *info, bool persistent) {
     PRINT_DEBUG("Enter lookup address");
+    persistent = false;
 
     if (persistent) {
         void *lookupAddress = dr_hashtable_lookup(drcontext, hashtable,
@@ -88,8 +89,8 @@ bool lookup_address(void *addr, drsym_info_t *info, bool persistent) {
 void init_lookup(void) {
     PRINT_DEBUG("Enter init lookup");
 
-    drcontext = dr_get_current_drcontext();
-    hashtable = dr_hashtable_create(drcontext, 16, 25, true, destroy_entry);
+    //drcontext = dr_get_current_drcontext();
+    //hashtable = dr_hashtable_create(drcontext, 16, 25, true, destroy_entry);
 
     PRINT_DEBUG("Exit init lookup");
 }
@@ -97,9 +98,9 @@ void init_lookup(void) {
 void deinit_lookup(void) {
     PRINT_DEBUG("Enter destroy lookup");
 
-    dr_hashtable_destroy(drcontext, hashtable);
-    hashtable = NULL;
-    drcontext = NULL;
+    //dr_hashtable_destroy(drcontext, hashtable);
+    //hashtable = NULL;
+    //drcontext = NULL;
 
     PRINT_DEBUG("Exit destroy lookup");
 }

@@ -284,6 +284,7 @@ static bool write_opnd(json_file_t *jsonFile, opnd_info_t *opndInfo) {
 
     if (opndInfo->debugInfo.sizeResults == 0) {
         strcat(buf, " }");
+        deinit_query_results(opndInfo->debugInfo);
         return append_buffer(jsonFile, buf);
     }
 
@@ -307,6 +308,8 @@ static bool write_debug_info(json_file_t *jsonFile, query_results_t info) {
     }
 
     for (int i = 0; i < info.sizeResults; i++) {
+        PRINT_DEBUG("Entered debug info for loop");
+
         if (i != 0 && !append_buffer(jsonFile, ", ")) {
             return false;
         }
@@ -316,6 +319,7 @@ static bool write_debug_info(json_file_t *jsonFile, query_results_t info) {
 
         switch (info.results[i].type) {
         case function:
+            PRINT_DEBUG("Writing function debug info");
             sprintf(buf,
                     "{ \"type\": \"function\", \"name\": \"%s\", "
                     "\"address\": \"%p\"",
@@ -323,6 +327,7 @@ static bool write_debug_info(json_file_t *jsonFile, query_results_t info) {
             break;
 
         case variable:
+            PRINT_DEBUG("Writing variable debug info");
             sprintf(buf,
                     "{ \"type\": \"variable\", \"name\": \"%s\", "
                     "\"isLocal\": %s, \"address\": \"%p\"",
@@ -330,12 +335,18 @@ static bool write_debug_info(json_file_t *jsonFile, query_results_t info) {
                     info.results[i].isLocal ? "true" : "false",
                     info.results[i].address);
             break;
+
+        default:
+            PRINT_ERROR("Tried to write bad debug info");
+            return false;
         }
 
+        PRINT_DEBUG("Writing debug information to buffer");
         bool success = append_buffer(jsonFile, buf) &&
                        (info.results[i].type == function ||
-                       (append_buffer(jsonFile, ", \"valueType\": ") &&
-                        write_type_info(jsonFile, info.results[i].valType))) &&
+                       (info.results[i].valType.name == NULL ||
+                       ((append_buffer(jsonFile, ", \"valueType\": ") &&
+                        write_type_info(jsonFile, info.results[i].valType))))) &&
                        append_buffer(jsonFile, " }");
 
         if (!success) {
@@ -351,6 +362,8 @@ static bool write_debug_info(json_file_t *jsonFile, query_results_t info) {
 }
 
 static bool write_type_info(json_file_t *jsonFile, type_t type) {
+    PRINT_DEBUG("Enter write type info");
+
     bool success = append_buffer(jsonFile, "{ \"name\": \"") &&
                    append_buffer(jsonFile, type.name) &&
                    append_buffer(jsonFile, "\", \"compound\": [ ");
@@ -378,6 +391,7 @@ static bool write_type_info(json_file_t *jsonFile, type_t type) {
         PRINT_ERROR("Could not terminate type info in entry");
     }
 
+    PRINT_DEBUG("Exit write type info");
     return success;
 }
 
@@ -398,10 +412,13 @@ static bool flush_buffer(json_file_t *jsonFile) {
 }
 
 static bool append_buffer(json_file_t *jsonFile, const char *str) {
+    PRINT_DEBUG("Enter append buffer");
+
     size_t len = strnlen(str, BUF_LEN);
 
     bool success = len != BUF_LEN && (jsonFile->size + len < BUF_LEN ||
                                       flush_buffer(jsonFile));
+
     if (!success) {
         PRINT_ERROR("Could not append to JSON file buffer");
         return false;
@@ -409,5 +426,7 @@ static bool append_buffer(json_file_t *jsonFile, const char *str) {
 
     memcpy(jsonFile->buf + jsonFile->size, str, len);
     jsonFile->size += len;
+
+    PRINT_DEBUG("Exit append buffer");
     return true;
 }
