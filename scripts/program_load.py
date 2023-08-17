@@ -12,7 +12,7 @@ def get_function_name(pc, debugInfo):
                 return func['name']
     return None
 
-def output_function_load(trace, debugInfo):
+def get_function_load(trace, debugInfo):
     funcInstrs = {}
 
     for entry in trace:
@@ -25,12 +25,9 @@ def output_function_load(trace, debugInfo):
         else:
             funcInstrs[funcName] += 1
 
-    instrsPairs = [(i, funcInstrs[i]) for i in funcInstrs]
-    instrsPairs.sort(key = lambda i: i[1], reverse = True)
-    for i in instrsPairs:
-        print(f'{i[0]}: {i[1]}')
+    return funcInstrs
 
-def output_variable_load(trace, debugInfo):
+def get_variable_load(trace, debugInfo):
     varAccs = {}
 
     for entry in trace:
@@ -44,22 +41,68 @@ def output_variable_load(trace, debugInfo):
             else:
                 varAccs[varName] += 1
 
-    varPairs = [(i, varAccs[i]) for i in varAccs]
-    varPairs.sort(key = lambda i: i[1], reverse = True)
-    for i in varPairs:
-        print(f'{i[0]}: {i[1]}')
+    return varAccs
 
-def output_program_load(tracePath, debugInfoPath):
+def get_trace_load(tracePath, debugInfoPath):
     trace = get_json(tracePath)
     debugInfo = get_json(debugInfoPath)
 
-    print('Functions:')
-    output_function_load(trace, debugInfo)
+    funcLoad = get_function_load(trace, debugInfo)
+    varLoad = get_variable_load(trace, debugInfo)
 
-    print('\nVariables:')
-    output_variable_load(trace, debugInfo)
+    return funcLoad, varLoad
 
-if len(sys.argv) != 3:
-    print('Error: Expected two arguments')
+def combine_loads(dstLoad, srcLoad):
+    for name in srcLoad:
+        if name not in dstLoad:
+            dstLoad[name] = srcLoad[name]
+        else:
+            dstLoad[name] += srcLoad[name]
+
+def output_load(load):
+    loadPairs = [(i, load[i]) for i in load]
+    loadPairs.sort(key = lambda i: i[1], reverse = True)
+    for pair in loadPairs:
+        print(f'{pair[0]}: {pair[1]}')
+
+def output_loads(name, funcLoad, varLoad):
+    if name is not None:
+        print(name + ':\n')
+
+    print('Function load:')
+    output_load(funcLoad)
+
+    print('\nVariable load:')
+    output_load(varLoad)
+    
+
+def output_overall_load(traceDebugInfo):
+    for entry in traceDebugInfo:
+        if ',' not in entry or entry[0] == ',' or entry[-1] == ',':
+            print(f'Error: Invalid trace/debugging information - {entry}')
+            return
+
+    overallFuncLoad = {}
+    overallVarLoad = {}
+
+    for entry in traceDebugInfo:
+        tracePath = entry[:entry.index(',')]
+        debugInfoPath = entry[entry.index(',')+1:]
+
+        funcLoad, varLoad = get_trace_load(tracePath, debugInfoPath)
+        if len(traceDebugInfo) != 1:
+            output_loads(tracePath, funcLoad, varLoad)
+            print('\n')
+
+        combine_loads(overallFuncLoad, funcLoad)
+        combine_loads(overallVarLoad, varLoad)
+
+    if len(traceDebugInfo) == 1:
+        output_loads(None, overallFuncLoad, overallVarLoad)
+    else:
+        output_loads('Overall', overallFuncLoad, overallVarLoad)
+
+if len(sys.argv) == 1:
+    print('Error: Requires trace/debugging information input')
 else:
-    output_program_load(sys.argv[1], sys.argv[2])
+    output_overall_load(sys.argv[1:])

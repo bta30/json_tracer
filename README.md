@@ -234,10 +234,13 @@ and operands (with debug information if available).
 ### Eraser
 This script, `eraser_lockset.py`, performs a modified version of the Eraser
 algorithm, returning the possible locks associated with certain resources for
-a given trace file. For multi-threaded applications, it is recommended to
+some given trace files. For multi-threaded applications, it is recommended to
 generate interleaved traces for this. For example, to get locks for resources
 in `trace.0000.log`, run:
 ```python scripts/eraser_lockset.py trace.0000.log```
+
+To get locks for resources combining traces `0.log`, `1.log` and `2.log`, run:
+```python scripts/eraser_lockset.py 0.log 1.log 2.log`
 
 These resources are global variables that are accessed under other global
 variables that are locks (detected as having type `std::mutex`). This are
@@ -247,27 +250,47 @@ It returns output of one line for each global variable with a list of each
 possible mutex. For example, if global variable `a` is locked with lock `b`,
 then there will be line `a, ['b']`, or this list may contain other locks.
 
+If multiple traces are given, the results for each individual trace are output,
+followed by their combined results.
+
 ### File Coverage
-This script, `file_coverage.py`, gets the code coverage, given a trace,
-extra debugging information (use `--output_debug_info` for this) and the paths
+This script, `file_coverage.py`, gets the code coverage, given traces,
+their extra debugging information (use `--output_debug_info` for this) and the paths
 to some source files. It outputs the coverage information (number of useful
 lines, number of useful lines covered and percentage of useful lines covered)
 of each file and then overall.
 
+A trace file and its debugging information are given as arguments by the
+paths separated with a comma. For example, we may have `trace.0000.log,debug.js`.
+We then separate these traces with a double dash to separate these from source file paths.
+
 For example, to run this on trace `trace.0000.log` with extra debugging
 information `debug.js` on source files `main.c` and `main2.c`, run:
-```python scripts/file_coverage.py trace.0000.log debug.js main.c main2.c```
+```python scripts/file_coverage.py trace.0000.log,debug.js - main.c main2.c```
+
+To run this on traces `trace.0000.log` with extra debugging information `debug_0.js`
+and  `trace.0001.log` with extra debugging information `debug_1.js` on source files
+`main.c` and `main2.c`, run:
+```python scripts/file_coverage.py trace.0000.log,debug_0.js trace.0001.log,debug_1.js - main.c main2.c`
 
 ### Program Load
-This script, `program_load.py`, gets the load of a trace - that is, the
+This script, `program_load.py`, gets the load of some traces - that is, the
 number of instructions spent inside the bodies of functions, and the number
 of times variables are accessed (global variables or different instances of
-local variables). It takes in an input of the path to a trace file and extra
+local variables). It takes in an input of the path to some trace files and extra
 trace debugging information, then outputs the load of functions in
 decreasing order (with function name, then number of instructions in that 
 unction's body executed), followed by the load of different variables (their
 names, then the number of times they were accessed).
 
+In the case of multiple traces, this outputs the load for each trace,
+then their combined overall load.
+
 For example, to run this on trace `trace.0000.log` with extra debugging
 information in `debug.js`, run:
-```python scripts/program_load.py trace.0000.log debug.js```
+```python scripts/program_load.py trace.0000.log,debug.js```
+
+For example, to run this on traces `trace.0000.log` with extra debugging
+information `debug_0.js` and `trace.0001.log` with extra debugging
+information `debug_1.js`, run:
+```python scripts/program_load.py trace.0000.log,debug_0.js trace.0001.log,debug_1.js```

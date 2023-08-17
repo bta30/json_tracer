@@ -36,7 +36,7 @@ class GlobalVariable:
         return self.valid
     
     def is_mutex(self):
-        return self.type == 'mutex'
+        return self.type == 'mutex' or self.type == 'pthread_t'
 
 def is_valid_ref(ref):
     if 'type' not in ref or 'isFar' not in ref or 'addr' not in ref:
@@ -121,10 +121,10 @@ def calls_function(jsonTraceEntry, funcName):
     return 'name' in debugInfo and debugInfo['name'] == funcName
 
 def is_call_lock(jsonTraceEntry):
-    return calls_function(jsonTraceEntry, 'std::mutex::lock')
+    return calls_function(jsonTraceEntry, 'std::mutex::lock') or calls_function(jsonTraceEntry, 'pthread_mutex_lock')
 
 def is_call_unlock(jsonTraceEntry):
-    return calls_function(jsonTraceEntry, 'std::mutex::unlock')
+    return calls_function(jsonTraceEntry, 'std::mutex::unlock') or calls_function(jsonTraceEntry, 'pthread_mutex_unlock')
 
 def get_current_rax(jsonTrace, entryIndex):
     tid = jsonTrace[entryIndex]['tid']
@@ -167,7 +167,7 @@ def eraser_lockset_one_var(jsonTrace, mutexes, variable):
     threadCandidates = {}
     threadLocks = {}
 
-    state = "virgin"
+    state = 'virgin'
 
     for i in range(len(jsonTrace)):
         entry = jsonTrace[i]
@@ -232,8 +232,40 @@ def eraser_lockset_file(filePath):
     mutexes = [var for var in globalVariables if var.is_mutex()]
     variables = [var for var in globalVariables if not var.is_mutex()]
 
+    results = {} 
     for var in variables:
         locks = eraser_lockset_one_var(jsonTrace, mutexes, var)
-        print(f'{var.name}, {[l.name for l in locks]}')
- 
-eraser_lockset_file(sys.argv[1])
+        results[var.name] = [l.name for l in locks]
+
+    return results
+
+def print_lockset(lockset):
+    for varName in lockset:
+        print(f'{varName}, {lockset[varName]}')
+
+def combine_locksets(locksets):
+    combined = {}
+    for lockset in locksets:
+        for varName in lockset:
+            if varName in combined:
+                combined[varName] = list(set.intersection(set(combined[varName]), set(lockset[varName])))
+            else:
+                combined[varName] = lockset[varName]
+
+    return combined
+
+def eraser_lockset_files(filePaths):
+    if len(filePaths) == 1:
+        print_lockset(eraser_lockset_file(filePaths[0]))
+    else:
+        locksets = [eraser_lockset_file(filePath) for filePath in filePaths]
+
+        for i in range(len(filePaths)):
+            print(f'{filePaths[i]}:')
+            print_lockset(locksets[i])
+            print()
+
+        print('Combined Output:')
+        print_lockset(combine_locksets(locksets))
+
+eraser_lockset_files(sys.argv[1:])
