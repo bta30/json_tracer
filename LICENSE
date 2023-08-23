@@ -1,3 +1,14 @@
+DynamoRIO is provided in external/DynamoRIO-Linux-**VERSION** with the
+provided licence there.
+
+Libdwarf is provided in external/libdwarf-**VERSION** with the provided
+licence there.
+
+Minunit is provided in the file test/include/minunit.h with the licence
+provided at the head of this file.
+
+All other remaining code is provided with the following licence:
+
 BSD 2-Clause License
 
 Copyright (c) 2023, bta30@cam.ac.uk

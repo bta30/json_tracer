@@ -3,12 +3,7 @@
 cd $(dirname $0)
 source ./config.sh
 
-function getDynamorio {
-    curl -L ${dynamorioURL} -s | tar -xz -C external/
-}
-
-function getLibdwarf {
-    curl -L ${libdwarfURL} -s | tar -xJ -C external/
+function buildLibdwarf {
     cd external/${libdwarfDir}
     mkdir build
     cd build
@@ -17,18 +12,7 @@ function getLibdwarf {
     cd ../../..
 }
 
-function getMinUnit {
-    curl -L ${minUnitURL} >test/include/minunit.h
-}
-
-function getDeps {
-    mkdir external/
-    getDynamorio
-    getLibdwarf
-    getMinUnit
-}
-
-function getBuild {
+function getBuildDir {
     mkdir build/
     cd build
     cmake ..
@@ -36,11 +20,12 @@ function getBuild {
 }
 
 function build {
+    buildLibdwarf
+
     cd build
     make
     cd ..
 }
 
-[ -d external/ ] || getDeps
-[ -d build/ ] || getBuild
+[ -d build/ ] || getBuildDir
 build
