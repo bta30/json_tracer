@@ -1,6 +1,6 @@
 #!/bin/sh
 
-cd $(dirname $0)
-source ./config.sh
+runDir=$(dirname $0)
+source $runDir/config.sh
 
-${drrun} -stack_size 2M -opt_cleancall 2 -c ${client} $@
+$runDir/$drrun -stack_size 2M -opt_cleancall 2 -c $runDir/$client $@
