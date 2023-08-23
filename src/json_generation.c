@@ -92,7 +92,13 @@ json_file_t open_json_file(const char *prefix) {
     jsonFile.fd = open_unique_file(prefix);
     jsonFile.file = fdopen(jsonFile.fd, "w");
     jsonFile.firstLine = true;
+    jsonFile.buf = malloc(sizeof(jsonFile.buf[0]) * JSON_BUF_LEN);
     jsonFile.size = 0;
+
+    if (jsonFile.buf == NULL) {
+        PRINT_ERROR("Could not allocate space for JSON file buffer");
+        EXIT_FAIL();
+    }
 
     if (!write_first_line(&jsonFile)) {
         EXIT_FAIL();
@@ -112,6 +118,8 @@ void close_json_file(json_file_t jsonFile) {
     if (!flush_buffer(&jsonFile)) {
         EXIT_FAIL();
     }
+
+    free(jsonFile.buf);
 
     if (fclose(jsonFile.file) == EOF) {
         PRINT_ERROR("Could not close JSON file");
@@ -414,10 +422,10 @@ static bool flush_buffer(json_file_t *jsonFile) {
 static bool append_buffer(json_file_t *jsonFile, const char *str) {
     PRINT_DEBUG("Enter append buffer");
 
-    size_t len = strnlen(str, BUF_LEN);
+    size_t len = strnlen(str, JSON_BUF_LEN);
 
-    bool success = len != BUF_LEN && (jsonFile->size + len < BUF_LEN ||
-                                      flush_buffer(jsonFile));
+    bool success = len != JSON_BUF_LEN && (jsonFile->size + len < JSON_BUF_LEN ||
+                                          flush_buffer(jsonFile));
 
     if (!success) {
         PRINT_ERROR("Could not append to JSON file buffer");

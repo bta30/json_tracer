@@ -20,12 +20,11 @@ function getBuildDir {
 }
 
 function build {
-    buildLibdwarf
-
     cd build
     make
     cd ..
 }
 
+[ -d external/${libdwarfDir}/build ] || buildLibdwarf
 [ -d build/ ] || getBuildDir
 build

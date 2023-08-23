@@ -5,11 +5,13 @@
 
 #include "dr_api.h"
 
+#define JSON_BUF_LEN ((uint64)1 << 30)
+
 typedef struct json_file {
     file_t fd;
     FILE *file;
     bool firstLine;
-    char buf[BUF_LEN];
+    char *buf;
     int size;
 } json_file_t;
 
