@@ -26,7 +26,6 @@ function getDeps {
     getDynamorio
     getLibdwarf
     getMinUnit
-    build
 }
 
 function getBuild {
