@@ -26,7 +26,7 @@ static int eraser(const char *trace, const char *output) {
         dup2(fd[1], 1);
         close(fd[1]);
 
-        execl("/usr/bin/python", "python", SCRIPTDIR ERASER, trace, NULL);
+        execl("/usr/bin/python3", "python", SCRIPTDIR ERASER, trace, NULL);
     } 
 
     close(fd[1]);

@@ -7,8 +7,7 @@ This requires an AMD64 machine running Linux with core utilities, g++, git,
 make and cmake.
 
 ## How to use
-To build the client, run `./build.sh` in the root directory of this repository.
-This will fetch the required dependencies and build the client.
+To build the client, run `./build.sh`.
 
 To run the client to generate a trace of `ls ARGS` using options OPTS, run
 `./run.sh OPTS -- ls ARGS`. Note that this requires building first.
