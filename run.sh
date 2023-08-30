@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 runDir=$(dirname $0)
 source $runDir/config.sh

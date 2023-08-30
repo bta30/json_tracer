@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 rm -f *.log
 ./build.sh

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 dynamorioVersion="9.93.19566"
 dynamorioDir="DynamoRIO-Linux-${dynamorioVersion}"

@@ -3,8 +3,8 @@ A DynamoRIO client to generate trace of a program using DynamoRIO, outputting
 in JSON
 
 ## Dependencies
-This requires an AMD64 machine running Linux with core utilities installed.
-Further dependencies are fetched automatically when building the client.
+This requires an AMD64 machine running Linux with core utilities, g++, git,
+make and cmake.
 
 ## How to use
 To build the client, run `./build.sh` in the root directory of this repository.
