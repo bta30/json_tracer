@@ -307,7 +307,9 @@ static bool test_ok(char *msg, Dwarf_Debug dbg, Dwarf_Error err, int res) {
 
     if (res  == DW_DLV_ERROR) {
         char *errMsg = dwarf_errmsg(err);
-        char fullMsg[strlen(msg) + strlen(errMsg) + 4];
+        char fullMsg[strlen(msg) + strlen(errMsg) + 3];
+
+        sprintf(fullMsg, "%s: %s", msg, errMsg);
 
         PRINT_ERROR(fullMsg);
         dwarf_dealloc_error(dbg, err);
@@ -803,11 +805,9 @@ static bool addattr_type(dwarf_t dwarf, Dwarf_Attribute attr, attrs_t *attrs) {
 
     int res = dwarf_formref(attr, &attrs->typeOffset, &attrs->typeIsInfo,
                             &err);
-    bool success = test_ok("Could not get DW_AT_type reference",
-                          dwarf.dbg, err, res);
 
-    attrs->hasType = success;
-    return success;
+    attrs->hasType = res == DW_DLV_OK;
+    return true;
 }
 
 static bool addattr_lopc(dwarf_t dwarf, Dwarf_Attribute attr, attrs_t *attrs) {
@@ -849,8 +849,7 @@ static bool addattr_loc(dwarf_t dwarf, Dwarf_Attribute attr, attrs_t *attrs) {
     }
 
     if (locEntryCount != 1) {
-        PRINT_ERROR("Expected one entry in location list");
-        return false;
+        return true;
     }
 
     unsigned int kind;

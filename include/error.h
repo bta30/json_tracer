@@ -3,7 +3,7 @@
 
 #include "dr_api.h"
 
-#define PRINT_ERROR(str) do { dr_fprintf(dr_get_stderr_file(), "Error: %s\n", str); } while (0)
+#define PRINT_ERROR(str) do { dr_fprintf(2, "Error: %s\n", str); } while (0)
 
 #define EXIT_FAIL() exit(1)
 
