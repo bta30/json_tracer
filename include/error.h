@@ -1,14 +1,14 @@
 #ifndef ERROR_H
 #define ERROR_H
 
-#include <stdio.h>
+#include "dr_api.h"
 
-#define PRINT_ERROR(str) do { fprintf(stderr, "Error: %s\n", str); } while (0)
+#define PRINT_ERROR(str) do { dr_fprintf(dr_get_stderr_file(), "Error: %s\n", str); } while (0)
 
 #define EXIT_FAIL() exit(1)
 
 #ifdef DEBUG
-#define PRINT_DEBUG(str) do { fprintf(stdout, "Debug: %s\n", str); } while(0)
+#define PRINT_DEBUG(str) do { dr_printf("Debug: %s\n", str); } while(0)
 #else
 #define PRINT_DEBUG(str) do {} while(0)
 #endif

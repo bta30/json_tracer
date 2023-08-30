@@ -9,7 +9,6 @@
 
 typedef struct json_file {
     file_t fd;
-    FILE *file;
     bool firstLine;
     char *buf;
     int size;

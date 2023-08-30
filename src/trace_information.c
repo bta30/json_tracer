@@ -144,12 +144,13 @@ static bool get_entry_info(instrument_vals_t vals, trace_entry_t *entry) {
 }
 
 static bool get_time_str(time_t time, char *str) {
-    struct tm *timeInfo = localtime(&time);
+    dr_time_t timeInfo;
+    dr_get_time(&timeInfo);
 
     sprintf(str,
-            "%04d-%02d-%02d %02d:%02d:%02d",
-            timeInfo->tm_year + 1900, timeInfo->tm_mon + 1, timeInfo->tm_mday,
-            timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
+            "%04d-%02d-%02d %02d:%02d:%02d.%04d",
+            timeInfo.year, timeInfo.month, timeInfo.day, timeInfo.hour,
+            timeInfo.minute, timeInfo.second, timeInfo.milliseconds);
             
 }
 static bool get_opnd_info(opnd_vals_t vals, opnd_info_t *info) {

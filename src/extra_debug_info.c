@@ -94,13 +94,13 @@ static bool write_funcs_dfs(debug_file_t *file, module_debug_t *info, ns_info_t 
 bool open_debug_file(const char *path, debug_file_t *file) {
     PRINT_DEBUG("Enter open debug file");
 
-    file->file = fopen(path, "w");
-    if (file->file == NULL) {
+    file->fd = dr_open_file(path, DR_FILE_ALLOW_LARGE);
+    if (file->fd == INVALID_FILE) {
         return false;
     }
 
     file->firstLine = true;
-    fprintf(file->file, "[\n");
+    dr_fprintf(file->fd, "[\n");
 
     PRINT_DEBUG("Exit open debug file");
     return true;
@@ -109,14 +109,10 @@ bool open_debug_file(const char *path, debug_file_t *file) {
 void close_debug_file(debug_file_t file) {
     PRINT_DEBUG("Enter close debug file");
 
-    fprintf(file.file, "\n]\n");
-    fflush(file.file);
+    dr_fprintf(file.fd, "\n]\n");
+    dr_flush_file(file.fd);
+    dr_close_file(file.fd);
 
-    if (fclose(file.file) == EOF) {
-        PRINT_ERROR("Could not close debug file");
-        EXIT_FAIL();
-    }
-    
     PRINT_DEBUG("Exit close debug file");
 }
 
@@ -284,43 +280,43 @@ static bool write_module_debug_json(debug_file_t *file,
     }
 
     if (!file->firstLine) {
-        fprintf(file->file, ",\n");
+        dr_fprintf(file->fd, ",\n");
     }
     file->firstLine = false;
 
-    fprintf(file->file, "{ \"path\": \"%s\", \"sourceFiles\": [ ", info.path);
+    dr_fprintf(file->fd, "{ \"path\": \"%s\", \"sourceFiles\": [ ", info.path);
 
     for (int i = 0; i < info.sizeSources; i++) {
         if (i != 0) {
-            fprintf(file->file, ", ");
+            dr_fprintf(file->fd, ", ");
         }
 
-        fprintf(file->file, "{ \"path\": \"%s\", \"lines\": [ ", info.sources[i].sourcePath);
+        dr_fprintf(file->fd, "{ \"path\": \"%s\", \"lines\": [ ", info.sources[i].sourcePath);
 
         for (int j = 0; j < info.sources[i].sizeLines; j++) {
             if (j != 0) {
-                fprintf(file->file, ", ");
+                dr_fprintf(file->fd, ", ");
             }
 
-            fprintf(file->file, "%lu", info.sources[i].lines[j]);
+            dr_fprintf(file->fd, "%lu", info.sources[i].lines[j]);
         }
 
-        fprintf(file->file, " ] }");
+        dr_fprintf(file->fd, " ] }");
     }
 
-    fprintf(file->file, " ], \"funcs\": ");
+    dr_fprintf(file->fd, " ], \"funcs\": ");
 
     if (!write_funcs(file, fullInfo)) {
         return false;
     }
 
-    fprintf(file->file, " }");
+    dr_fprintf(file->fd, " }");
     
     return true;
 }
 
 static bool write_funcs(debug_file_t *file, module_debug_t *info) {
-    fprintf(file->file, "[ ");
+    dr_fprintf(file->fd, "[ ");
 
     ns_info_t ns;
     ns.buf = malloc(MIN_CAPACITY * sizeof(ns.buf[0]));
@@ -340,7 +336,7 @@ static bool write_funcs(debug_file_t *file, module_debug_t *info) {
         }
     }
 
-    fprintf(file->file, " ]");
+    dr_fprintf(file->fd, " ]");
 
     return true;
 }
@@ -355,19 +351,19 @@ static bool write_funcs_dfs(debug_file_t *file, module_debug_t *info, ns_info_t 
         }
 
         if (!ns->firstFunc) {
-            fprintf(file->file, ", ");
+            dr_fprintf(file->fd, ", ");
         }
         ns->firstFunc = false;
 
-        fprintf(file->file, "{ \"name\": \"");
+        dr_fprintf(file->fd, "{ \"name\": \"");
 
         if (strlen(ns->buf) == 0) {
-            fprintf(file->file, "%s", entry.name);
+            dr_fprintf(file->fd, "%s", entry.name);
         } else {
-            fprintf(file->file, "%s::%s", ns->buf, entry.name);
+            dr_fprintf(file->fd, "%s::%s", ns->buf, entry.name);
         }
 
-        fprintf(file->file,
+        dr_fprintf(file->fd,
                 "\", \"lowpc\": \"%p\", \"highpc\": \"%p\" }",
                 info->start + (size_t)entry.lowPC,
                 info->start + (size_t)entry.highPC);

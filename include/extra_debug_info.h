@@ -1,14 +1,12 @@
 #ifndef EXTRA_DEBUG_INFO_H
 #define EXTRA_DEBUG_INFO_H
 
-#include <stdio.h>
-
 #include "dr_api.h"
 
 #include "module_debug_info.h"
 
 typedef struct debug_file {
-    FILE *file;
+    file_t fd;
     bool firstLine;
 } debug_file_t;
 

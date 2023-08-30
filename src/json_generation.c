@@ -1,6 +1,5 @@
 #include "json_generation.h"
 
-#include <stdio.h>
 #include <string.h>
 
 #include "dr_api.h"
@@ -90,7 +89,6 @@ json_file_t open_json_file(const char *prefix) {
 
     json_file_t jsonFile;
     jsonFile.fd = open_unique_file(prefix);
-    jsonFile.file = fdopen(jsonFile.fd, "w");
     jsonFile.firstLine = true;
     jsonFile.buf = malloc(sizeof(jsonFile.buf[0]) * JSON_BUF_LEN);
     jsonFile.size = 0;
@@ -120,11 +118,7 @@ void close_json_file(json_file_t jsonFile) {
     }
 
     free(jsonFile.buf);
-
-    if (fclose(jsonFile.file) == EOF) {
-        PRINT_ERROR("Could not close JSON file");
-        EXIT_FAIL();
-    }
+    dr_close_file(jsonFile.fd);
 
     PRINT_DEBUG("Exited close JSON file");
 }
@@ -406,13 +400,14 @@ static bool write_type_info(json_file_t *jsonFile, type_t type) {
 static bool flush_buffer(json_file_t *jsonFile) {
     PRINT_DEBUG("Entering flush JSON file buffer");
 
-    size_t res = fwrite(jsonFile->buf, sizeof(jsonFile->buf[0]),
-                        jsonFile->size, jsonFile->file);
+    size_t res = dr_write_file(jsonFile->fd, jsonFile->buf,
+                               sizeof(jsonFile->buf[0]) * jsonFile->size);
     if (res != jsonFile->size) {
         PRINT_ERROR("Could not flush JSON file buffer");
         return false;
     }
 
+    dr_flush_file(jsonFile->fd);
     jsonFile->size = 0;
 
     PRINT_DEBUG("Exiting flush JSON file buffer");

@@ -141,44 +141,44 @@ static bool process_opt(int opt, vals_buf_opts_t *outputOpts, const char **debug
             return false;
 
         default:
-            printf("Error: Invalid client usage - use --help for options\n");
+            dr_printf("Error: Invalid client usage - use --help for options\n");
             return false;
     }
 }
 
 static void print_help(void) {
-    printf("Client usage: drrun -c libjsontracer.so [OPTIONS] -- [COMMAND]\n"
-           "Produces a trace of the execution of a given command in JSON\n"
-           "In the case of a conflict of options, the options later in "
-           "[OPTIONS] supersede the earlier options.\n"
-           "It is possible that you may have to further specify a -stack_size "
-           "for drrun if your command opens modules with a lot of debugging "
-           "information.\n"
-           "\n"
-           "Options:\n"
-            "   --include                                                           "
-            "Sets all following options to include what is specified\n"
-            "   --exclude                                                           "
-            "Sets all following options to exclude what is specified\n"
-            "   --module [PATH] | --module -N[PATH] | --module --all            "
-            "Specifies a module to filter, or any module\n"
-            "   --file  [PATH]  | --file -N[PATH] | --file --all                "
-            "Specifies a source file to filter, or any source file\n"
-            "   --instr [OPCODE NAME] | --instr -N[OPCODE NAME] | --instr --all "
-            "Specifies an instruction to filter, or any instruction\n"
-            "   --output_interleaved                                                "
-            "Outputs a JSON file with interleaved entries from all threads\n"
-            "   --output_separated                                                  "
-            "Outputs separate JSON files for entries from each thread\n"
-            "   --output_prefix [PREFIX]                                            "
-            "Sets the prefix for the output of the trace\n"
-            "   --output_debug_info [PATH]                                          "
-            "Outputs extra debugging information from the trace\n"
-            "   --help                                                              "
-            "Prints this help message\n"
-            "\n"
-            "Note: By default, the client works as if starting with arguments: "
-            "--output_prefix trace --include --module --all\n");
+    dr_printf("Client usage: drrun -c libjsontracer.so [OPTIONS] -- [COMMAND]\n"
+              "Produces a trace of the execution of a given command in JSON\n"
+              "In the case of a conflict of options, the options later in "
+              "[OPTIONS] supersede the earlier options.\n"
+              "It is possible that you may have to further specify a -stack_size "
+              "for drrun if your command opens modules with a lot of debugging "
+              "information.\n"
+              "\n"
+              "Options:\n"
+               "   --include                                                           "
+               "Sets all following options to include what is specified\n"
+               "   --exclude                                                           "
+               "Sets all following options to exclude what is specified\n"
+               "   --module [PATH] | --module -N[PATH] | --module --all            "
+               "Specifies a module to filter, or any module\n"
+               "   --file  [PATH]  | --file -N[PATH] | --file --all                "
+               "Specifies a source file to filter, or any source file\n"
+               "   --instr [OPCODE NAME] | --instr -N[OPCODE NAME] | --instr --all "
+               "Specifies an instruction to filter, or any instruction\n"
+               "   --output_interleaved                                                "
+               "Outputs a JSON file with interleaved entries from all threads\n"
+               "   --output_separated                                                  "
+               "Outputs separate JSON files for entries from each thread\n"
+               "   --output_prefix [PREFIX]                                            "
+               "Sets the prefix for the output of the trace\n"
+               "   --output_debug_info [PATH]                                          "
+               "Outputs extra debugging information from the trace\n"
+               "   --help                                                              "
+               "Prints this help message\n"
+               "\n"
+               "Note: By default, the client works as if starting with arguments: "
+               "--output_prefix trace --include --module --all\n");
 }
 
 static bool add_filter_arg_entry(bool include, arg_type_t argType) {
