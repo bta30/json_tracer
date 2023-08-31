@@ -36,7 +36,7 @@ class GlobalVariable:
         return self.valid
     
     def is_mutex(self):
-        return self.type == 'mutex' or self.type == 'pthread_t'
+        return self.type == 'mutex' or self.type == 'pthread_mutex_t'
 
 def is_valid_ref(ref):
     if 'type' not in ref or 'isFar' not in ref or 'addr' not in ref:
