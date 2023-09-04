@@ -6,4 +6,4 @@ set(SRCS
 
 add_executable(sum ${SRCS})
 target_include_directories(sum PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_compile_options(sum PRIVATE -O0 -g3 -gdwarf-4)
+target_compile_options(sum PRIVATE -O0 -g3 -gdwarf-4 -std=c++11)

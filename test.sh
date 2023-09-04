@@ -3,17 +3,22 @@
 cd $(dirname $0)
 
 function buildTests {
-    mkdir build_test
-    cd build_test
-    cmake ../test
-    make
+    rm -rf build_test/ &&
+    mkdir build_test &&
+    cd build_test &&
+    cmake ../test &&
+    make &&
     cd ..
 }
 
-rm -f *.log
-./build.sh
-buildTests
-cd build_test
-ctest --rerun-failed --output-on-failure
-cd ..
-rm -f *.log
+function runTests {
+    rm -f *.log &&
+    cd build_test &&
+    ctest --rerun-failed --output_on_failure &&
+    cd .. &&
+    rm -f *.log
+}
+
+./build.sh &&
+buildTests &&
+runTests

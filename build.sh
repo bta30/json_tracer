@@ -25,6 +25,7 @@ function build {
     cd ..
 }
 
-[ -d external/${libdwarfDir}/build ] || buildLibdwarf
-[ -d build/ ] || getBuildDir
+rm -rf external/${libdwarfDir}/build build/
+buildLibdwarf
+getBuildDir
 build

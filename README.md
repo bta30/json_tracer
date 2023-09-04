@@ -82,16 +82,16 @@ instructions in that file.
 For example, to only include `call` or `ret` instructions when tracing `ls -a`,
 run:
 
-```./run.sh --exclude --instruction --all --include --instr call --instr ret -- ls```
+```./run.sh --output_interleaved --exclude --instr --all --include --instr call --instr ret -- ls```
 
 To only include the file at source path `src/main.c` when tracing `ls -a`, run:
 
-```./run.sh --exclude --file --all --include --file src/main.c -- ls -a```
+```./run.sh --output_interleaved --exclude --file --all --include --file src/main.c -- ls -a```
 
 To only include entries in module `build/module.so` but excluding entries corresponding
 to source files `src/main.c` and `src/file.c` when generating a trace of `progname args`, run:
 
-```./run.sh --exclude --module --all --include --module build/module.so --exclude --file src/main.c -- file src/file.c -- progname args```
+```./run.sh --output_interleaved --exclude --module --all --include --module build/module.so --exclude --file src/main.c -- file src/file.c -- progname args```
 
 We can also use `-N` to match anything except for a given option. For example,
 we can use ``--include --instr -Nmov` to include all instructions except `mov`.

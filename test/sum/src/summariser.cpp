@@ -110,7 +110,7 @@ static std::map<int, std::pair<int, double>> getSummary(std::ifstream &file) {
             tagSumm.first++;
             tagSumm.second += entry.second;
         } else {
-            tagSumm = std::pair(1, entry.second);
+            tagSumm = std::pair<int, double>(1, entry.second);
         }
         currSummary[entry.first] = tagSumm;
     }
@@ -121,7 +121,7 @@ static std::map<int, std::pair<int, double>> getSummary(std::ifstream &file) {
 static std::pair<int, double> parseLine(const std::string &line) {
     size_t commaPosition = line.find(',');
     if (commaPosition == std::string::npos) {
-        return std::pair(-1, 0.0);
+        return std::pair<int, double>(-1, 0.0);
     }
 
     int tag;
@@ -129,10 +129,10 @@ static std::pair<int, double> parseLine(const std::string &line) {
     try {
         tag = std::stoi(line, &tagSize);
     } catch(...) {
-        return std::pair(-1, 0.0);
+        return std::pair<int, double>(-1, 0.0);
     }
     if (tagSize != commaPosition) {
-        return std::pair(-1, 0.0);
+        return std::pair<int, double>(-1, 0.0);
     }
 
     double value;
@@ -140,13 +140,13 @@ static std::pair<int, double> parseLine(const std::string &line) {
     try {
         value = std::stod(line.substr(commaPosition + 1), &valueSize);
     } catch(...) {
-        return std::pair(-1, 0.0);
+        return std::pair<int, double>(-1, 0.0);
     }
     if (commaPosition + 1 + valueSize != line.size()) {
-        return std::pair(-1, 0.0);
+        return std::pair<int, double>(-1, 0.0);
     }
 
-    return std::pair(tag, value);
+    return std::pair<int, double>(tag, value);
 }
 
 
