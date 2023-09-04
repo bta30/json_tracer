@@ -12,7 +12,7 @@ To build the client, run `./build.sh`.
 To run the client to generate a trace of `ls ARGS` using options OPTS, run
 `./run.sh OPTS -- ls ARGS`. Note that this requires building first.
 
-To perform the provided tests on the client, run `./test.sh`.
+To build and perform the provided tests on the client, run `./test.sh`.
 
 ## Debugging Information in Trace Output
 The trace output includes all relevant debugging information retrievable.

@@ -4,7 +4,10 @@
 
 #include "minunit.h"
 
-#define SCRIPTDIR "../../scripts/"
+#define ROOTDIR ".."
+#define SUMPROG "build_test/sum/sum"
+#define SUMTABLES "test/sum/tables/*.csv"
+#define SCRIPTDIR ROOTDIR "/scripts/"
 #define ERASER "eraser_lockset.py"
 
 /**
@@ -36,12 +39,11 @@ static int eraser(const char *trace, const char *output) {
     buf[0] = '\0';
     int outSize = read(fd[0], buf, sizeof(buf));
     if (strncmp(buf, output, outputLen)) {
-        printf("Invalid output of Eraser on trace %s:\n%d%*.s\n"
-               "Expected:\n%.*s\n",
-               trace, outSize, outSize, buf, outputLen, output);
-        for (int  i = 0; i <  outSize; i++) {
-            printf("%c\n", buf[i]);
+        printf("Invalid output of Eraser on trace %s:\n", trace);
+        for (int  i = 0; i < outSize; i++) {
+            printf("%c", buf[i]);
         }
+        printf("\nExpected:\n%.*s\n", outputLen, output);
         return 1;
     }
 
@@ -49,11 +51,11 @@ static int eraser(const char *trace, const char *output) {
 }
 
 MU_TEST(test_eraser_lockset_sum_one_thread_no_filter) {
-    system("cd ../.. && "
+    system("cd " ROOTDIR " && "
            "./run.sh --output_interleaved --output_prefix 1tnf -- "
-           "bin/sum 1 test/sum/tables/*.csv >/dev/null");
+           SUMPROG " 1 " SUMTABLES " >/dev/null");
 
-    const char *traceName = "../../1tnf.0000.log";
+    const char *traceName = ROOTDIR "/1tnf.0000.log";
     const char *expectedOutput = "netSummary, ['netSummaryMutex']\n";
 
     int result = eraser(traceName, expectedOutput);
@@ -61,11 +63,11 @@ MU_TEST(test_eraser_lockset_sum_one_thread_no_filter) {
 }
 
 MU_TEST(test_eraser_lockset_sum_two_thread_no_filter) {
-    system("cd ../.. && "
+    system("cd " ROOTDIR " && "
            "./run.sh --output_interleaved --output_prefix 2tnf -- "
-           "bin/sum 1 test/sum/tables/*.csv >/dev/null");
+           SUMPROG " 1 " SUMTABLES " >/dev/null");
 
-    const char *traceName = "../../2tnf.0000.log";
+    const char *traceName = ROOTDIR "/2tnf.0000.log";
     const char *expectedOutput = "netSummary, ['netSummaryMutex']\n";
 
     int result = eraser(traceName, expectedOutput);
@@ -73,12 +75,12 @@ MU_TEST(test_eraser_lockset_sum_two_thread_no_filter) {
 }
 
 MU_TEST(test_eraser_lockset_sum_one_thread_filter_module_sum) {
-    system("cd ../.. && "
+    system("cd " ROOTDIR " && "
            "./run.sh --output_interleaved --output_prefix 1tfm "
-           "--exclude --module --all --include --module bin/sum -- "
-           "bin/sum 1 test/sum/tables/*.csv >/dev/null");
+           "--exclude --module --all --include --module " SUMPROG " -- "
+           SUMPROG " 1 " SUMTABLES " >/dev/null");
 
-    const char *traceName = "../../1tfm.0000.log";
+    const char *traceName = ROOTDIR "/1tfm.0000.log";
     const char *expectedOutput = "netSummary, ['netSummaryMutex']\n";
 
     int result = eraser(traceName, expectedOutput);
@@ -86,12 +88,12 @@ MU_TEST(test_eraser_lockset_sum_one_thread_filter_module_sum) {
 }
 
 MU_TEST(test_eraser_lockset_sum_two_thread_filter_module_sum) {
-    system("cd ../.. && "
+    system("cd " ROOTDIR " && "
            "./run.sh --output_interleaved --output_prefix 2tfm "
-           "--exclude --module --all --include --module bin/sum -- "
-           "bin/sum 2 test/sum/tables/*.csv >/dev/null");
+           "--exclude --module --all --include --module " SUMPROG " -- "
+           SUMPROG " 2 " SUMTABLES " >/dev/null");
 
-    const char *traceName = "../../2tfm.0000.log";
+    const char *traceName = ROOTDIR "/2tfm.0000.log";
     const char *expectedOutput = "netSummary, ['netSummaryMutex']\n";
 
     int result = eraser(traceName, expectedOutput);
@@ -99,13 +101,13 @@ MU_TEST(test_eraser_lockset_sum_two_thread_filter_module_sum) {
 }
 
 MU_TEST(test_eraser_lockset_sum_one_thread_filter_summariser_cpp) {
-    system("cd ../.. && "
+    system("cd " ROOTDIR " && "
            "./run.sh --output_interleaved --output_prefix 1tff "
            "--exclude --module --all "
            "--include --file test/sum/src/summariser.cpp -- "
-           "bin/sum 1 test/sum/tables/*.csv >/dev/null");
+           SUMPROG " 1 " SUMTABLES " >/dev/null");
 
-    const char *traceName = "../../1tff.0000.log";
+    const char *traceName = ROOTDIR "/1tff.0000.log";
     const char *expectedOutput = "netSummary, ['netSummaryMutex']\n";
 
     int result = eraser(traceName, expectedOutput);
@@ -113,13 +115,13 @@ MU_TEST(test_eraser_lockset_sum_one_thread_filter_summariser_cpp) {
 }
 
 MU_TEST(test_eraser_lockset_sum_two_thread_filter_summariser_cpp) {
-    system("cd ../.. && "
+    system("cd " ROOTDIR " && "
            "./run.sh --output_interleaved --output_prefix 2tff "
            "--exclude --module --all "
            "--include --file test/sum/src/summariser.cpp -- "
-           "bin/sum 2 test/sum/tables/*.csv >/dev/null");
+           SUMPROG " 2 " SUMTABLES " >/dev/null");
 
-    const char *traceName = "../../2tff.0000.log";
+    const char *traceName = ROOTDIR "/2tff.0000.log";
     const char *expectedOutput = "netSummary, ['netSummaryMutex']\n";
 
     int result = eraser(traceName, expectedOutput);
@@ -127,12 +129,12 @@ MU_TEST(test_eraser_lockset_sum_two_thread_filter_summariser_cpp) {
 }
 
 MU_TEST(test_eraser_lockset_sum_one_thread_filter_all) {
-    system("cd ../.. && "
+    system("cd " ROOTDIR " && "
            "./run.sh --output_interleaved --output_prefix 1tfa "
            "--exclude --module --all -- "
-           "bin/sum 1 test/sum/tables/*.csv >/dev/null");
+           SUMPROG " 1 " SUMTABLES " >/dev/null");
 
-    const char *traceName = "../../1tfa.0000.log";
+    const char *traceName = ROOTDIR "/1tfa.0000.log";
     const char *expectedOutput = "";
 
     int result = eraser(traceName, expectedOutput);
@@ -140,12 +142,12 @@ MU_TEST(test_eraser_lockset_sum_one_thread_filter_all) {
 }
 
 MU_TEST(test_eraser_lockset_sum_two_thread_filter_all) {
-    system("cd ../.. && "
+    system("cd " ROOTDIR " && "
            "./run.sh --output_interleaved --output_prefix 2tfa "
            "--exclude --module --all -- "
-           "bin/sum 2 test/sum/tables/*.csv >/dev/null");
+           SUMPROG " 2 " SUMTABLES " >/dev/null");
 
-    const char *traceName = "../../2tfa.0000.log";
+    const char *traceName = ROOTDIR "/2tfa.0000.log";
     const char *expectedOutput = "";
 
     int result = eraser(traceName, expectedOutput);

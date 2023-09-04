@@ -45,7 +45,3 @@ configure_DynamoRIO_client(jsontracer)
 foreach(EXT ${EXTS})
     use_DynamoRIO_extension(jsontracer "${EXT}")
 endforeach (EXT ${EXTS})
-
-include(CTest)
-enable_testing()
-add_subdirectory(test)
