@@ -17,7 +17,7 @@ static struct {
 bool init_filter(bool include) {
     PRINT_DEBUG("Enter init filter");
 
-    filter.entries = malloc(sizeof(filter.entries[0]) * MIN_CAPACITY);
+    filter.entries = __wrap_malloc(sizeof(filter.entries[0]) * MIN_CAPACITY);
     filter.sizeEntries = 0;
     filter.capacityEntries = MIN_CAPACITY;
     filter.maxValueSize = 0;
@@ -37,12 +37,12 @@ bool deinit_filter(void) {
 
     for (int i = 0; i < filter.sizeEntries; i++) {
         if (filter.entries[i].value != NULL) {
-            free(filter.entries[i].value);
+            __wrap_free(filter.entries[i].value);
         }
     }
 
     if (filter.entries == NULL) {
-        free(filter.entries);
+        __wrap_free(filter.entries);
     }
 
     PRINT_DEBUG("Exit deinit filter");
@@ -54,7 +54,7 @@ bool add_filter_entry(filter_entry_t entry) {
 
     if (filter.sizeEntries == filter.capacityEntries) {
         filter.capacityEntries *= 2;
-        filter.entries = realloc(filter.entries, filter.sizeEntries *
+        filter.entries = __wrap_realloc(filter.entries, filter.sizeEntries *
                                                  sizeof(filter.entries[0]));
 
         if (filter.entries) {

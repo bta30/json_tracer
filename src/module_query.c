@@ -125,7 +125,7 @@ bool module_query(module_debug_t info, query_t query, query_results_t *res) {
 }
 
 static bool init_results(query_results_t *results) {
-    results->results = malloc(sizeof(results->results[0]) * MIN_CAPACITY);
+    results->results = __wrap_malloc(sizeof(results->results[0]) * MIN_CAPACITY);
     results->sizeResults = 0;
     results->capacityResults = MIN_CAPACITY;
 
@@ -140,7 +140,7 @@ static bool init_results(query_results_t *results) {
 static bool add_result(query_results_t *results, query_result_t result) {
     if (results->sizeResults == results->capacityResults) {
         results->capacityResults *= 2;
-        results->results = realloc(results->results,
+        results->results = __wrap_realloc(results->results,
                                    results->capacityResults *
                                    sizeof(results->results[0]));
 
@@ -284,6 +284,8 @@ static bool type_query(query_info_t info, size_t entryIndex, type_t *type) {
 
     entry_t *entry = &info.info.entries[entryIndex];
 
+    type_compound_t compound;
+    bool success;
     while (entry != NULL) {
         switch (entry->tag) {
             case DW_TAG_base_type:
@@ -306,8 +308,7 @@ static bool type_query(query_info_t info, size_t entryIndex, type_t *type) {
             case DW_TAG_shared_type:
             case DW_TAG_volatile_type:
             case DW_TAG_array_type:
-                type_compound_t compound;
-                bool success = get_type_compound(entry->tag, &compound) &&
+                success = get_type_compound(entry->tag, &compound) &&
                                append_type_compound(compound, type);
                 if (!success) {
                     return false;
@@ -376,7 +377,7 @@ static bool get_type_compound(Dwarf_Half tag, type_compound_t *compound) {
 
 static bool append_type_compound(type_compound_t compound, type_t *type) {
     if (type->compound == NULL) {
-        type->compound = malloc(MIN_CAPACITY * sizeof(type->compound[0]));
+        type->compound = __wrap_malloc(MIN_CAPACITY * sizeof(type->compound[0]));
         type->compoundCapacity = MIN_CAPACITY;
 
         if (type->compound == NULL) {
@@ -387,7 +388,7 @@ static bool append_type_compound(type_compound_t compound, type_t *type) {
 
     if (type->compoundSize == type->compoundCapacity) {
         type->compoundCapacity *= 2;
-        type->compound = realloc(type->compound, type->compoundCapacity *
+        type->compound = __wrap_realloc(type->compound, type->compoundCapacity *
                                                  sizeof(type->compound[0]));
         if (type->compound == NULL) {
             PRINT_ERROR("Could not allocate further space for type compound");
@@ -412,7 +413,7 @@ static bool add_ns_res(char *name, query_results_t nsRes, query_results_t *res) 
 
         currRes.deallocName = true;
         
-        char *newName = malloc(nameSize * sizeof(currRes.name[0]));
+        char *newName = __wrap_malloc(nameSize * sizeof(currRes.name[0]));
         if (newName == NULL) {
             PRINT_ERROR("Could not allocate space for new name\n");
         }
@@ -428,10 +429,10 @@ static bool add_ns_res(char *name, query_results_t nsRes, query_results_t *res) 
         }
 
         if (nsRes.results[i].deallocName) {
-            free(nsRes.results[i].name);
+            __wrap_free(nsRes.results[i].name);
         }
     }
 
-    free(nsRes.results);
+    __wrap_free(nsRes.results);
     return true;
 }

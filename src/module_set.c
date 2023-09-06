@@ -37,7 +37,7 @@ bool init_module_set(const char *debugFilePath) {
         return false;
     }
 
-    moduleSet.info = malloc(MIN_CAPACITY * sizeof(moduleSet.info[0]));
+    moduleSet.info = __wrap_malloc(MIN_CAPACITY * sizeof(moduleSet.info[0]));
     moduleSet.infoSize = 0;
     moduleSet.infoCapacity = MIN_CAPACITY;
     moduleSet.debugFilePath = debugFilePath;
@@ -72,7 +72,7 @@ bool deinit_module_set(void) {
         deinit_module_debug(moduleSet.info[i]);
     }
 
-    free(moduleSet.info);
+    __wrap_free(moduleSet.info);
 
     PRINT_DEBUG("Exit deinit module set");
     return true;
@@ -130,7 +130,7 @@ static bool add_module(module_debug_t info) {
     
     if (moduleSet.infoSize == moduleSet.infoCapacity) {
         moduleSet.infoCapacity *= 2;
-        moduleSet.info = realloc(moduleSet.info, moduleSet.infoCapacity *
+        moduleSet.info = __wrap_realloc(moduleSet.info, moduleSet.infoCapacity *
                                                  sizeof(moduleSet.info[0]));
         if (moduleSet.info == NULL) {
             PRINT_ERROR("Could not allocate space for new module");

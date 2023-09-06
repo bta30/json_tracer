@@ -54,15 +54,15 @@ void deinit_query_results(query_results_t results) {
     for (int i = 0; i < results.sizeResults; i++) {
         query_result_t *res = &results.results[i];
         if (res->type == variable && res->valType.compound != NULL) {
-            free(res->valType.compound);
+            __wrap_free(res->valType.compound);
         }
 
         if (res->deallocName) {
-            free(res->name);
+            __wrap_free(res->name);
         }
     }
 
-    free(results.results);
+    __wrap_free(results.results);
 
     PRINT_DEBUG("Exit deinit query results");
 }
@@ -98,11 +98,11 @@ bool query_line(void *pc, char **file, uint64_t *line, bool persistent) {
     } while (retry);
 
     if (lineInfo.name != NULL) {
-        free(lineInfo.name);
+        __wrap_free(lineInfo.name);
     }
 
     if (lineInfo.file_available_size == 0) {
-        free(lineInfo.file);
+        __wrap_free(lineInfo.file);
         lineInfo.file = NULL;
     }
 
@@ -136,7 +136,7 @@ bool query_file(void *pc, char *modulePath, char *sourcePath, int bufSize) {
         sourcePath[0] = '\0';
     } else {
         strncpy(sourcePath, src, bufSize);
-        free(src);
+        __wrap_free(src);
     }
 
     PRINT_DEBUG("Exit query file");
@@ -163,7 +163,7 @@ bool query_function(void *pc, char **functionName) {
     } while (retry);
     
     if (funcInfo.file != NULL) {
-        free(funcInfo.file);
+        __wrap_free(funcInfo.file);
     }
 
     *functionName = funcInfo.name;
@@ -196,16 +196,16 @@ static bool alloc_info_strs(drsym_info_t *info) {
 
     info->file_size *= 2;
     if (info->file != NULL) {
-        free(info->file);
+        __wrap_free(info->file);
     }
 
     info->name_size *= 2;
     if (info->name != NULL) {
-        free(info->name);
+        __wrap_free(info->name);
     }
 
-    info->file = malloc(info->file_size);
-    info->name = malloc(info->name_size);
+    info->file = __wrap_malloc(info->file_size);
+    info->name = __wrap_malloc(info->name_size);
     if (info->file == NULL || info->name == NULL) {
         PRINT_ERROR("Unable to allocate new space for info buffers");
     }

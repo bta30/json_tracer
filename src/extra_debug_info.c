@@ -172,7 +172,7 @@ static bool save_line(drsym_line_info_t *line, module_debug_info_t *module) {
 
     if (source->sizeLines == source->capacityLines) {
         source->capacityLines *= 2;
-        uint64 *newLines = realloc(source->lines, source->capacityLines *
+        uint64 *newLines = __wrap_realloc(source->lines, source->capacityLines *
                                                   sizeof(source->lines[0]));
 
         if (newLines == NULL) {
@@ -191,7 +191,7 @@ static bool save_line(drsym_line_info_t *line, module_debug_info_t *module) {
 }
 
 static bool init_module_debug_info(module_debug_info_t *info) {
-    info->sources = malloc(MIN_CAPACITY * sizeof(info->sources[0]));
+    info->sources = __wrap_malloc(MIN_CAPACITY * sizeof(info->sources[0]));
     if (info->sources == NULL) {
         PRINT_ERROR("Could not allocate space for module_debug_info_t");
         info->success = false;
@@ -213,11 +213,11 @@ static void deinit_module_debug_info(module_debug_info_t info) {
         deinit_source_debug_info(info.sources[i]);
     }
 
-    free(info.sources);
+    __wrap_free(info.sources);
 }
 
 static bool init_source_debug_info(source_debug_info_t *info) {
-    info->lines = malloc(MIN_CAPACITY * sizeof(info->lines[0]));
+    info->lines = __wrap_malloc(MIN_CAPACITY * sizeof(info->lines[0]));
     if (info->lines == NULL) {
         PRINT_ERROR("Could not allocate space for source_debug_info_t");
         return false;
@@ -230,7 +230,7 @@ static bool init_source_debug_info(source_debug_info_t *info) {
 
 static void deinit_source_debug_info(source_debug_info_t info) {
     if (info.lines != NULL) {
-        free(info.lines);
+        __wrap_free(info.lines);
     }
 }
 
@@ -246,7 +246,7 @@ static source_debug_info_t *find_source(module_debug_info_t *info, const char *p
 
     if (info->sizeSources == info->capacitySources) {
         info->capacitySources *= 2;
-        source_debug_info_t *sources = realloc(info->sources,
+        source_debug_info_t *sources = __wrap_realloc(info->sources,
                                                info->capacitySources *
                                                sizeof(info->sources[0]));
         if (sources == NULL) {
@@ -319,7 +319,7 @@ static bool write_funcs(debug_file_t *file, module_debug_t *info) {
     dr_fprintf(file->fd, "[ ");
 
     ns_info_t ns;
-    ns.buf = malloc(MIN_CAPACITY * sizeof(ns.buf[0]));
+    ns.buf = __wrap_malloc(MIN_CAPACITY * sizeof(ns.buf[0]));
     if (ns.buf == NULL) {
         PRINT_ERROR("Could not allocate initial space for namespace string buffer");
         return false;
@@ -344,6 +344,8 @@ static bool write_funcs(debug_file_t *file, module_debug_t *info) {
 static bool write_funcs_dfs(debug_file_t *file, module_debug_t *info, ns_info_t *ns) {
     entry_t entry = info->entries[ns->entry];
 
+    char *currName;
+    size_t minCapacity, currNameLen;
     switch (entry.tag) {
     case DW_TAG_subprogram:
         if (!entry.hasLowPC || !entry.hasHighPC || entry.name == NULL) {
@@ -372,12 +374,12 @@ static bool write_funcs_dfs(debug_file_t *file, module_debug_t *info, ns_info_t 
     case DW_TAG_namespace:
     case DW_TAG_class_type:
     case DW_TAG_structure_type:
-        char *currName = entry.name == NULL ? "<NULL>" : entry.name;
-        size_t minCapacity = strlen(ns->buf) + strlen(currName) + 3;
+        currName = entry.name == NULL ? "<NULL>" : entry.name;
+        minCapacity = strlen(ns->buf) + strlen(currName) + 3;
 
         if (ns->capacity < minCapacity) {
             ns->capacity *= 2;
-            ns->buf = realloc(ns->buf, ns->capacity * sizeof(ns->buf[0]));
+            ns->buf = __wrap_realloc(ns->buf, ns->capacity * sizeof(ns->buf[0]));
             if (ns->buf == NULL) {
                 PRINT_ERROR("Could not allocate further space for namespace name buffer");
                 return false;
@@ -388,7 +390,7 @@ static bool write_funcs_dfs(debug_file_t *file, module_debug_t *info, ns_info_t 
         strcat(ns->buf, currName);
 
     case DW_TAG_compile_unit:
-        size_t currNameLen = strlen(ns->buf);
+        currNameLen = strlen(ns->buf);
         for (int i = 0; i < entry.sizeChildren; i++) {
             ns->buf[currNameLen] = '\0';
             ns->entry = entry.children[i];

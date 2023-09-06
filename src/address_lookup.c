@@ -107,14 +107,14 @@ void deinit_lookup(void) {
 
 static void set_blank(drsym_info_t *info) {
     if (info->file != NULL) {
-        free(info->file);
+        __wrap_free(info->file);
         info->file = NULL;
     }
     info->file_size = 0;
     info->file_available_size = 0;
 
     if (info->name != NULL) {
-        free(info->name);
+        __wrap_free(info->name);
         info->name = NULL;
     }
     info->name_size = 0;
@@ -176,14 +176,14 @@ static bool save_entry(void *entry, drsym_info_t *info) {
     }
 
     if (res->fileSize == 0 && info->file != NULL) {
-        free(info->file);
+        __wrap_free(info->file);
         info->file = NULL;
     } else if (res->fileSize > 0) {
         strcpy(info->file, res->file);
     }
 
     if (res->nameSize == 0 && info->name != NULL) {
-        free(info->name);
+        __wrap_free(info->name);
         info->name = NULL;
     } else if (res->nameSize > 0) {
         strcpy(info->name, res->name);

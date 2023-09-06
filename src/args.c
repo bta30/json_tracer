@@ -61,7 +61,7 @@ bool process_args(int argc, const char **argv) {
         return false;
     }
 
-    char **nonConstArgv = malloc(sizeof(argv[0]) * argc);
+    char **nonConstArgv = __wrap_malloc(sizeof(argv[0]) * argc);
     if (nonConstArgv == NULL) {
         PRINT_ERROR("Could not allocate space for non const argv");
         return false;
@@ -73,12 +73,12 @@ bool process_args(int argc, const char **argv) {
     const char *debugPath = NULL;
     while ((opt = getopt_long(argc, nonConstArgv, "", opts, NULL)) != -1) {
         if (!process_opt(opt, &outputOpts, &debugPath)) {
-            free(nonConstArgv);
+            __wrap_free(nonConstArgv);
             return false;
         }
     }
 
-    free(nonConstArgv);
+    __wrap_free(nonConstArgv);
 
     if (outputOpts.prefix == NULL) {
         outputOpts.prefix = "trace";
@@ -192,7 +192,7 @@ static bool add_filter_arg_entry(bool include, arg_type_t argType) {
         const char *arg = optarg + (entry.matchNot ? 2 : 0);
 
         if (argType == argInstruction) {
-            entry.value = malloc(sizeof(arg[0]) * (strlen(arg) + 1));
+            entry.value = __wrap_malloc(sizeof(arg[0]) * (strlen(arg) + 1));
             strcpy(entry.value, arg);
         } else {
             entry.value = realpath(arg, NULL);

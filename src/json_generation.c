@@ -90,7 +90,7 @@ json_file_t open_json_file(const char *prefix) {
     json_file_t jsonFile;
     jsonFile.fd = open_unique_file(prefix);
     jsonFile.firstLine = true;
-    jsonFile.buf = malloc(sizeof(jsonFile.buf[0]) * JSON_BUF_LEN);
+    jsonFile.buf = __wrap_malloc(sizeof(jsonFile.buf[0]) * JSON_BUF_LEN);
     jsonFile.size = 0;
 
     if (jsonFile.buf == NULL) {
@@ -117,7 +117,7 @@ void close_json_file(json_file_t jsonFile) {
         EXIT_FAIL();
     }
 
-    free(jsonFile.buf);
+    __wrap_free(jsonFile.buf);
     dr_close_file(jsonFile.fd);
 
     PRINT_DEBUG("Exited close JSON file");
@@ -225,7 +225,7 @@ static bool write_line_info(json_file_t *jsonFile, trace_entry_t entry) {
     sprintf(buf, "\"lineInfo\": { \"file\": \"%s\", \"line\": %lu }, ",
             entry.file, entry.line);
     
-    free(entry.file);
+    __wrap_free(entry.file);
     return append_buffer(jsonFile, buf);
 }
 
@@ -241,6 +241,7 @@ static bool write_opnd(json_file_t *jsonFile, opnd_info_t *opndInfo) {
         return false;
     }
 
+    mem_ref_info_t *ref;
     switch (opndInfo->type) {
     case immedInt:
         sprintf(buf, "\"value\": \"0x%lx\"", opndInfo->info.immedInt);
@@ -261,7 +262,7 @@ static bool write_opnd(json_file_t *jsonFile, opnd_info_t *opndInfo) {
         break;
     
     case memRef:
-        mem_ref_info_t *ref = &opndInfo->info.memRef;
+        ref = &opndInfo->info.memRef;
         sprintf(buf,
                 "\"reference\": { \"type\": \"%s\", \"isFar\": %s, "
                 "\"addr\": \"%p\"",

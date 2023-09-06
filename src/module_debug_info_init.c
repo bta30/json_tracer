@@ -272,14 +272,14 @@ void deinit_module_debug(module_debug_t info) {
     PRINT_DEBUG("Enter deinit module debug");
 
     if (info.roots != NULL) {
-        free(info.roots);
+        __wrap_free(info.roots);
     }
 
     if (info.strs != NULL) {
         for (int i = 0; i < info.sizeStrs; i++) {
-            free(info.strs[i]);
+            __wrap_free(info.strs[i]);
         }
-        free(info.strs);
+        __wrap_free(info.strs);
     }
 
     if (info.entries == NULL) {
@@ -291,11 +291,11 @@ void deinit_module_debug(module_debug_t info) {
         bool hasChildren = info.entries[i].children != NULL &&
                            info.entries[i].capacityChildren != 0;
         if (hasChildren) {
-            free(info.entries[i].children);
+            __wrap_free(info.entries[i].children);
         }
     }
 
-    free(info.entries);
+    __wrap_free(info.entries);
 
     PRINT_DEBUG("Exit deinit module debug");
 }
@@ -380,15 +380,15 @@ static bool get_debug_info_from_dwarf(dwarf_t dwarf) {
 }
 
 static bool module_debug_init(module_debug_t *info) {
-    info->strs = malloc(sizeof(info->strs[0]) * MIN_CAPACITY);
+    info->strs = __wrap_malloc(sizeof(info->strs[0]) * MIN_CAPACITY);
     info->sizeStrs = 0;
     info->capacityStrs = MIN_CAPACITY;
 
-    info->entries = malloc(sizeof(info->entries[0]) * MIN_CAPACITY);
+    info->entries = __wrap_malloc(sizeof(info->entries[0]) * MIN_CAPACITY);
     info->sizeEntries = 0;
     info->capacityEntries = MIN_CAPACITY;
 
-    info->roots = malloc(sizeof(info->roots[0]) * MIN_CAPACITY);
+    info->roots = __wrap_malloc(sizeof(info->roots[0]) * MIN_CAPACITY);
     info->sizeRoots = 0;
     info->capacityRoots = MIN_CAPACITY;
 
@@ -406,7 +406,7 @@ static bool copy_string(module_debug_t *info, const char *str, char **strOut) {
 
     if (info->sizeStrs == info->capacityStrs) {
         info->capacityStrs = 2 * info->capacityStrs;
-        info->strs = realloc(info->strs, info->capacityStrs *
+        info->strs = __wrap_realloc(info->strs, info->capacityStrs *
                                          sizeof(info->strs[0]));
         if (info->strs == NULL) {
             PRINT_ERROR("Could not allocate space for new string entry");
@@ -415,7 +415,7 @@ static bool copy_string(module_debug_t *info, const char *str, char **strOut) {
     }
 
     int len = strlen(str) + 1;
-    info->strs[info->sizeStrs] = malloc(len * sizeof(info->strs[0][0]));
+    info->strs[info->sizeStrs] = __wrap_malloc(len * sizeof(info->strs[0][0]));
     if (info->strs[info->sizeStrs] == NULL) {
         PRINT_ERROR("Could not allocate space for new string");
         return false;
@@ -433,7 +433,7 @@ static bool alloc_entry(module_debug_t *info, size_t *entryIndex) {
 
     if (info->sizeEntries == info->capacityEntries) {
         info->capacityEntries *= 2;
-        info->entries = realloc(info->entries, info->capacityEntries *
+        info->entries = __wrap_realloc(info->entries, info->capacityEntries *
                                                sizeof(info->entries[0]));
         if (info->entries == NULL) {
             PRINT_ERROR("Could not allocate space for new entry");
@@ -452,7 +452,7 @@ static bool add_root(module_debug_t *info, size_t root) {
 
     if (info->sizeRoots == info->capacityRoots) {
         info->capacityRoots *= 2;
-        info->roots = realloc(info->roots, info->capacityRoots *
+        info->roots = __wrap_realloc(info->roots, info->capacityRoots *
                                            sizeof(info->roots[0]));
         if (info->roots == NULL) {
             PRINT_ERROR("Could not allocate space for new root");
@@ -470,7 +470,7 @@ static bool add_child(entry_t *entry, size_t child) {
     PRINT_DEBUG("Enter add child");
 
     if (entry->children == NULL || entry->capacityChildren == 0) {
-        entry->children = malloc(sizeof(entry->children[0]) * MIN_CAPACITY);
+        entry->children = __wrap_malloc(sizeof(entry->children[0]) * MIN_CAPACITY);
         entry->sizeChildren = 0;
         entry->capacityChildren = MIN_CAPACITY;
         if (entry->children == NULL) {
@@ -481,7 +481,7 @@ static bool add_child(entry_t *entry, size_t child) {
 
     if (entry->sizeChildren == entry->capacityChildren) {
         entry->capacityChildren *= 2;
-        entry->children = realloc(entry->children,
+        entry->children = __wrap_realloc(entry->children,
                                        entry->capacityChildren *
                                        sizeof(entry->children[0]));
         if(entry->children == NULL) {
