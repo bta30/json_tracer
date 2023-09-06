@@ -261,23 +261,23 @@ static bool write_opnd(json_file_t *jsonFile, opnd_info_t *opndInfo) {
         break;
     
     case memRef:
-        mem_ref_info_t *memRef = &opndInfo->info.memRef;
+        mem_ref_info_t *ref = &opndInfo->info.memRef;
         sprintf(buf,
                 "\"reference\": { \"type\": \"%s\", \"isFar\": %s, "
                 "\"addr\": \"%p\"",
-                memRef->type, memRef->isFar, memRef->addr);
+                ref->type, ref->isFar, ref->addr);
 
-        if (memRef->outputVal) {
-            sprintf(buf + strlen(buf), ", \"value\": \"0x%lx\"", memRef->val);
+        if (ref->outputVal) {
+            sprintf(buf + strlen(buf), ", \"value\": \"0x%lx\"", ref->val);
         }
 
-        if (memRef->outputBaseDisp) {
+        if (ref->outputBaseDisp) {
             sprintf(buf + strlen(buf),
                     ", \"base\": { \"name\": \"%s\", \"value\": \"0x%lx\" }"
                     ", \"index\": { \"name\": \"%s\", \"value\": \"0x%lx\" }"
                     ", \"scale\": %i, \"disp\": %i",
-                    memRef->base, memRef->baseVal, memRef->index,
-                    memRef->indexVal, memRef->scale, memRef->disp);
+                    ref->base, ref->baseVal, ref->index,
+                    ref->indexVal, ref->scale, ref->disp);
         }
 
         strcat(buf, " }");
