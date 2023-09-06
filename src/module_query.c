@@ -140,9 +140,9 @@ static bool init_results(query_results_t *results) {
 static bool add_result(query_results_t *results, query_result_t result) {
     if (results->sizeResults == results->capacityResults) {
         results->capacityResults *= 2;
-        results->results = reallocarray(results->results,
-                                        results->capacityResults,
-                                        sizeof(results->results[0]));
+        results->results = realloc(results->results,
+                                   results->capacityResults *
+                                   sizeof(results->results[0]));
 
         if (results->results == NULL) {
             PRINT_ERROR("Could not further allocate space for module query "
@@ -387,8 +387,8 @@ static bool append_type_compound(type_compound_t compound, type_t *type) {
 
     if (type->compoundSize == type->compoundCapacity) {
         type->compoundCapacity *= 2;
-        type->compound = reallocarray(type->compound, type->compoundCapacity,
-                                      sizeof(type->compound[0]));
+        type->compound = realloc(type->compound, type->compoundCapacity *
+                                                 sizeof(type->compound[0]));
         if (type->compound == NULL) {
             PRINT_ERROR("Could not allocate further space for type compound");
             return false;

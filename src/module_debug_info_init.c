@@ -406,8 +406,8 @@ static bool copy_string(module_debug_t *info, const char *str, char **strOut) {
 
     if (info->sizeStrs == info->capacityStrs) {
         info->capacityStrs = 2 * info->capacityStrs;
-        info->strs = reallocarray(info->strs, info->capacityStrs,
-                                  sizeof(info->strs[0]));
+        info->strs = realloc(info->strs, info->capacityStrs *
+                                         sizeof(info->strs[0]));
         if (info->strs == NULL) {
             PRINT_ERROR("Could not allocate space for new string entry");
             return false;
@@ -433,8 +433,8 @@ static bool alloc_entry(module_debug_t *info, size_t *entryIndex) {
 
     if (info->sizeEntries == info->capacityEntries) {
         info->capacityEntries *= 2;
-        info->entries = reallocarray(info->entries, info->capacityEntries,
-                                     sizeof(info->entries[0]));
+        info->entries = realloc(info->entries, info->capacityEntries *
+                                               sizeof(info->entries[0]));
         if (info->entries == NULL) {
             PRINT_ERROR("Could not allocate space for new entry");
             return false;
@@ -452,8 +452,8 @@ static bool add_root(module_debug_t *info, size_t root) {
 
     if (info->sizeRoots == info->capacityRoots) {
         info->capacityRoots *= 2;
-        info->roots = reallocarray(info->roots, info->capacityRoots,
-                                   sizeof(info->roots[0]));
+        info->roots = realloc(info->roots, info->capacityRoots *
+                                           sizeof(info->roots[0]));
         if (info->roots == NULL) {
             PRINT_ERROR("Could not allocate space for new root");
             return false;
@@ -481,8 +481,8 @@ static bool add_child(entry_t *entry, size_t child) {
 
     if (entry->sizeChildren == entry->capacityChildren) {
         entry->capacityChildren *= 2;
-        entry->children = reallocarray(entry->children,
-                                       entry->capacityChildren,
+        entry->children = realloc(entry->children,
+                                       entry->capacityChildren *
                                        sizeof(entry->children[0]));
         if(entry->children == NULL) {
             PRINT_ERROR("Could not allocate further space for children");

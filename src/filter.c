@@ -54,8 +54,8 @@ bool add_filter_entry(filter_entry_t entry) {
 
     if (filter.sizeEntries == filter.capacityEntries) {
         filter.capacityEntries *= 2;
-        filter.entries = reallocarray(filter.entries, filter.sizeEntries,
-                                      sizeof(filter.entries[0]));
+        filter.entries = realloc(filter.entries, filter.sizeEntries *
+                                                 sizeof(filter.entries[0]));
 
         if (filter.entries) {
             PRINT_ERROR("Could not allocate further space for filter entries");

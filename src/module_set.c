@@ -130,8 +130,8 @@ static bool add_module(module_debug_t info) {
     
     if (moduleSet.infoSize == moduleSet.infoCapacity) {
         moduleSet.infoCapacity *= 2;
-        moduleSet.info = reallocarray(moduleSet.info, moduleSet.infoCapacity,
-                                      sizeof(moduleSet.info[0]));
+        moduleSet.info = realloc(moduleSet.info, moduleSet.infoCapacity *
+                                                 sizeof(moduleSet.info[0]));
         if (moduleSet.info == NULL) {
             PRINT_ERROR("Could not allocate space for new module");
             dr_mutex_unlock(moduleSet.mutex);

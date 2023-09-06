@@ -172,8 +172,8 @@ static bool save_line(drsym_line_info_t *line, module_debug_info_t *module) {
 
     if (source->sizeLines == source->capacityLines) {
         source->capacityLines *= 2;
-        uint64 *newLines = reallocarray(source->lines, source->capacityLines,
-                                        sizeof(source->lines[0]));
+        uint64 *newLines = realloc(source->lines, source->capacityLines *
+                                                  sizeof(source->lines[0]));
 
         if (newLines == NULL) {
             module->success = false;
@@ -246,9 +246,9 @@ static source_debug_info_t *find_source(module_debug_info_t *info, const char *p
 
     if (info->sizeSources == info->capacitySources) {
         info->capacitySources *= 2;
-        source_debug_info_t *sources = reallocarray(info->sources,
-                                                    info->capacitySources,
-                                                    sizeof(info->sources[0]));
+        source_debug_info_t *sources = realloc(info->sources,
+                                               info->capacitySources *
+                                               sizeof(info->sources[0]));
         if (sources == NULL) {
             info->success = false;
             PRINT_ERROR("Could not allocate further space for module_debug_info_t");
@@ -377,7 +377,7 @@ static bool write_funcs_dfs(debug_file_t *file, module_debug_t *info, ns_info_t 
 
         if (ns->capacity < minCapacity) {
             ns->capacity *= 2;
-            ns->buf = reallocarray(ns->buf, ns->capacity, sizeof(ns->buf[0]));
+            ns->buf = realloc(ns->buf, ns->capacity * sizeof(ns->buf[0]));
             if (ns->buf == NULL) {
                 PRINT_ERROR("Could not allocate further space for namespace name buffer");
                 return false;
