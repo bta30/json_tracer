@@ -195,7 +195,8 @@ static bool add_filter_arg_entry(bool include, arg_type_t argType) {
             entry.value = __wrap_malloc(sizeof(arg[0]) * (strlen(arg) + 1));
             strcpy(entry.value, arg);
         } else {
-            entry.value = realpath(arg, NULL);
+            entry.value = malloc(sizeof(entry.value[0]) * PATH_MAX);
+            realpath(arg, entry.value);
         }
     }
     
