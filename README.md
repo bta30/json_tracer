@@ -4,7 +4,8 @@ in JSON
 
 ## Dependencies
 This requires an AMD64 machine running Linux with core utilities, g++, git,
-make and cmake.
+make and cmake. This has been tested on stock versions of Ubuntu 22.04 and
+Debian 12.
 
 ## How to use
 To build the client, run `./build.sh`.
